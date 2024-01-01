@@ -4,14 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Page</title>
+    <style>
+        /* Add some styling to make sure the input is centered within the form */
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
 </head>
 <body>
     <h1>Welcome, User {{ user_id }}</h1>
 
     <form action="{{ url_for('serve_user_page', user_id=user_id) }}" method="post">
         <label for="choice">Choose a value:</label>
-        <!-- Set the width to 3 times the default width -->
-        <input type="range" name="choice" min="0" max="100" value="50" step="1" style="width: 300%;">
+        <!-- Set the width to 100% to make it as wide as the window -->
+        <input type="range" name="choice" min="0" max="100" value="50" step="1" style="width: 100%;">
 
         <button type="submit">Send</button>
     </form>
