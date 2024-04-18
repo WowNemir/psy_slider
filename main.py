@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-app = Flask('application', template_folder="/home/nemir/psy_slider/templates")
+app = Flask(__name__, template_folder="templates")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite database, the file will be named site.db
 db = SQLAlchemy(app)
 
@@ -18,8 +18,10 @@ class Choice(db.Model):
     user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
 
 # Create the tables before the first request is processed
-@app.before_first_request
 def create_tables():
+    db.create_all()
+
+with app.app_context():
     db.create_all()
 
 # Route for serving the main page where users can choose their role
