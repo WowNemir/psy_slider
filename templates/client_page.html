@@ -16,12 +16,12 @@
 <body>
     <h1>Welcome, User {{ user_id }}</h1>
 
-    <form action="{{ url_for('serve_user_page', user_id=user_id) }}" method="post">
-        <label for="choice">Choose a value:</label>
+    <form action="{{ url_for('serve_client_page', user_id=client_id) }}" method="post">
+        <label for="choice">Выберите доволность сессией:</label>
         <!-- Set the width to 100% to make it as wide as the window -->
         <input type="range" name="choice" min="0" max="100" value="50" step="1" style="width: 100%;">
 
-        <button type="submit">Send</button>
+        <button type="submit">Отправить</button>
     </form>
 </body>
 </html>

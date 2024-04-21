@@ -18,13 +18,21 @@ class User(db.Model):
     username = db.Column(db.String(255))
     password = db.Column(db.String(255))
     salt = db.Column(db.String(255))  # Adding salt column
+    clients = db.relationship('Client', backref='user', lazy=True)
     choices = db.relationship('Choice', backref='user', lazy=True)
 
 class Choice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     choice = db.Column(db.Integer)
+    client_id = db.Column(db.String(50), db.ForeignKey('client.id'), nullable=False)
     user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+
+class Client(db.Model):
+    id = db.Column(db.String(50), primary_key=True)
+    name = db.Column(db.String(255))
+    psycho_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+    choices = db.relationship('Choice', backref='client', lazy=True)
 
 def calculate_hash(password, salt):
     return bcrypt.hashpw(password.encode('utf-8'), salt.encode('utf-8')).decode('utf-8')
@@ -95,18 +103,18 @@ def register():
 #         return redirect(url_for('serve_admin_dashboard'))
 
 # Route for serving the user page with a slider and send button
-@app.route('/user_page/<user_id>', methods=['GET', 'POST'])
-def serve_user_page(user_id):
+@app.route('/user_page/<client_id>', methods=['GET', 'POST'])
+def serve_сдшуте_page(client_id):
     if request.method == 'POST':
         choice = request.form.get('choice')
-        new_choice = Choice(choice=choice, user_id=user_id)
+        new_choice = Choice(choice=choice, client_id=client_id)
         db.session.add(new_choice)
         db.session.commit()
-    return render_template('user_page.html', user_id=user_id)
+    return render_template('client_page.html', client_id=client_id)
 
 @app.route('/admin_dashboard')
 def serve_admin_dashboard():
-  all_users = User.query.all()
+  all_users = Client.query.all()
 #   user_dict = {user.id: user for user in all_users}
   return render_template('admin_dashboard.html', all_users=all_users)
 
