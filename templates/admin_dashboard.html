@@ -6,15 +6,12 @@
     <title>Admin Dashboard</title>
 </head>
 <body>
-    <h1>Welcome to the Admin Dashboard</h1>
-
-    <h2>All Users:</h2>
+    <h2>Клиенты:</h2>
     <ul>
-        {% for user_id, user_info in all_users.items() %}
+        {% for client_info in all_users %}
             <li>
-                User ID: {{ user_id }},
-                Role: {{ user_info.role }},
-                <a href="{{ url_for('serve_user_history', user_id=user_id) }}">View History</a>
+                {{ client_info.username }},
+                <a href="{{ url_for('serve_user_history', user_id=client_info.id) }}">View History</a>
             </li>
         {% endfor %}
     </ul>

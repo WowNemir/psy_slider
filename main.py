@@ -3,9 +3,13 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import bcrypt
+import pathlib
 
 app = Flask(__name__, template_folder="templates")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/site.db'
+
+cwd = pathlib.Path.cwd()
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(cwd / 'instance' / 'site.db')
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -103,8 +107,8 @@ def serve_user_page(user_id):
 @app.route('/admin_dashboard')
 def serve_admin_dashboard():
   all_users = User.query.all()
-  user_dict = {user.id: user for user in all_users}
-  return render_template('admin_dashboard.html', all_users=user_dict)
+#   user_dict = {user.id: user for user in all_users}
+  return render_template('admin_dashboard.html', all_users=all_users)
 
 @app.route('/user_history/<user_id>')
 def serve_user_history(user_id):
