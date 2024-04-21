@@ -5,7 +5,7 @@ from datetime import datetime
 import bcrypt
 
 app = Flask(__name__, template_folder="templates")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/site.db'
 db = SQLAlchemy(app)
 
 class User(db.Model):
