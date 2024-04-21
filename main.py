@@ -2,9 +2,10 @@ import uuid
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import bcrypt
 
 app = Flask(__name__, template_folder="templates")
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Use SQLite database, the file will be named site.db
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -12,6 +13,7 @@ class User(db.Model):
     role = db.Column(db.String(10))
     username = db.Column(db.String(255))
     password = db.Column(db.String(255))
+    salt = db.Column(db.String(255))  # Adding salt column
     choices = db.relationship('Choice', backref='user', lazy=True)
 
 class Choice(db.Model):
@@ -20,14 +22,12 @@ class Choice(db.Model):
     choice = db.Column(db.Integer)
     user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
 
-# Create the tables before the first request is processed
-def create_tables():
-    db.create_all()
+def calculate_hash(password, salt):
+    return bcrypt.hashpw(password.encode('utf-8'), salt.encode('utf-8')).decode('utf-8')
 
-with app.app_context():
-    db.create_all()
+def generate_salt():
+    return bcrypt.gensalt().decode('utf-8')
 
-# Route for serving the main page where users can choose their role
 @app.route('/')
 def serve_main_page():
     return render_template('main_page.html')
@@ -40,13 +40,12 @@ def serve_login_page():
 def serve_register_page():
     return render_template('register_page.html')
 
-
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form['username']
     password = request.form['password']
     user = User.query.filter_by(username=username).first()
-    if user: # and check_password_hash(user.password, password):
+    if user and calculate_hash(password, user.salt) == user.password:
         return redirect(url_for('serve_admin_dashboard'))
     else:
         return "Invalid username or password"
@@ -57,20 +56,17 @@ def register():
     new_password = request.form['new_password']
     confirm_password = request.form['confirm_password']
 
-    # Check if username is already taken
     existing_user = User.query.filter_by(username=new_username).first()
     if existing_user:
         return "Username already exists. Please choose a different one."
 
-    # Check if passwords match
     if new_password != confirm_password:
         return "Passwords do not match."
 
-    # Hash the password before storing it
-    hashed_password = 123
+    salt = generate_salt()
+    hashed_password = calculate_hash(new_password, salt)
 
-    # Create a new user and add it to the database
-    new_user = User(id = uuid.uuid1().hex, username=new_username, password=hashed_password)
+    new_user = User(id=uuid.uuid1().hex, username=new_username, password=hashed_password, salt=salt)
     db.session.add(new_user)
     db.session.commit()
 
@@ -104,7 +100,6 @@ def serve_user_page(user_id):
         db.session.commit()
     return render_template('user_page.html', user_id=user_id)
 
-# Route for serving the admin dashboard
 @app.route('/admin_dashboard')
 def serve_admin_dashboard():
   all_users = User.query.all()
