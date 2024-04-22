@@ -9,6 +9,8 @@ app = Flask(__name__, template_folder="templates")
 
 cwd = pathlib.Path.cwd()
 
+if str(cwd).endswith('nemir'):
+    cwd = cwd / "psy_slider"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(cwd / 'instance' / 'site.db')
 db = SQLAlchemy(app)
 
