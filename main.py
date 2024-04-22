@@ -58,7 +58,7 @@ def login():
     password = request.form['password']
     user = User.query.filter_by(username=username).first()
     if user and calculate_hash(password, user.salt) == user.password:
-        return redirect(url_for('serve_admin_dashboard'))
+        return redirect(url_for('serve_admin_dashboard', psycho_id=user.id))
     else:
         return "Invalid username or password"
 
@@ -92,42 +92,26 @@ def add_client():
         new_client = Client(id=uuid.uuid1().hex, name=name, psycho_id=psycho_id)
         db.session.add(new_client)
         db.session.commit()
-        return redirect(url_for('serve_admin_dashboard'))
+        return redirect(url_for('serve_admin_dashboard', psycho_id=psycho_id))
     return render_template('add_client.html')
 
-# Create a new HTML template add_client.html for adding a client
-# @app.route('/select_role', methods=['POST'])
-# def serve_select_role():
-#     user_id = request.form.get('user_id')
-#     role = request.form.get('role')
-
-#     # Check if the user already exists in the database
-#     user = User.query.get(user_id)
-#     if user is None:
-#         # If not, add the user to the database
-#         new_user = User(id=user_id, role=role)
-#         db.session.add(new_user)
-#         db.session.commit()
-
-#     if role == 'user':
-#         return redirect(url_for('serve_user_page', user_id=user_id))
-#     elif role == 'admin':
-#         return redirect(url_for('serve_admin_dashboard'))
-
 # Route for serving the user page with a slider and send button
-@app.route('/user_page/<client_id>', methods=['GET', 'POST'])
-def serve_сдшуте_page(client_id):
+@app.route('/client_page/<psycho_id>/<client_id>', methods=['GET', 'POST'])
+def serve_client_page(client_id, psycho_id):
+    client = Client.query.filter_by(id=client_id).first()
+
     if request.method == 'POST':
         choice = request.form.get('choice')
-        new_choice = Choice(choice=choice, client_id=client_id)
+        new_choice = Choice(choice=choice, client_id=client_id, user_id=psycho_id)
         db.session.add(new_choice)
         db.session.commit()
-    return render_template('client_page.html', client_id=client_id)
+        return render_template('thank_you_page.html')
+    return render_template('client_page.html', client=client, psycho_id=psycho_id)
 
-@app.route('/admin_dashboard')
-def serve_admin_dashboard():
+@app.route('/admin_dashboard/<psycho_id>')
+def serve_admin_dashboard(psycho_id):
   clients = Client.query.all()
-  return render_template('admin_dashboard.html', clients=clients)
+  return render_template('admin_dashboard.html', clients=clients, psycho_id=psycho_id)
 
 @app.route('/client_history/<client_id>')
 def serve_client_history(client_id):
