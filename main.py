@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import bcrypt
 import pathlib
-
+from flask import jsonify
 app = Flask(__name__, template_folder="templates")
 
 cwd = pathlib.Path.cwd()
@@ -109,6 +109,21 @@ def serve_client_page(client_id, psycho_id):
         db.session.commit()
         return render_template('thank_you_page.html')
     return render_template('client_page.html', client=client, psycho_id=psycho_id)
+
+
+
+@app.route('/api/choices/<client_id>')
+def get_client_choices(client_id):
+    choices = Choice.query.filter_by(client_id=client_id).all()
+    choices_data = []
+    for choice in choices:
+        choice_info = {
+            'timestamp': choice.timestamp.strftime('%Y-%m-%d %H:%M:%S'),  # Convert to string format
+            'choice': choice.choice
+        }
+        choices_data.append(choice_info)
+    return jsonify(choices_data)
+
 
 @app.route('/admin_dashboard/<psycho_id>')
 def serve_admin_dashboard(psycho_id):

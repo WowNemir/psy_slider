@@ -1,19 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Client-Side Graphs</title>
+    <!-- Add Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <h1>Графики для {{ client.name }}</h1>
     <div>
         <h2>История выбора:</h2>
-        <ul>
-            {% for choice in choices %}
-            <li>{{ choice.timestamp }} - {{ choice.choice }}</li>
-            {% endfor %}
+        <ul id="choicesList">
+            <!-- Choices will be added dynamically here -->
         </ul>
     </div>
     <div>
-        <canvas id="userGraph"></canvas>
+        <canvas id="userGraph" width="400" height="300"></canvas>
     </div>
+
+    <script>
+        var client_id = "{{ client.id }}";
+        fetch('/api/choices/' + client_id)  // Replace client_id with the actual client ID
+            .then(response => response.json())
+            .then(data => {
+                // Process data and create chart
+                processData(data);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+
+
+        function processData(data) {
+            // Extract labels and data from API response
+            var labels = data.map(choice => choice.timestamp);
+            var values = data.map(choice => choice.choice);
+
+            // Create chart data
+            var chartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Choices',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    data: values
+                }]
+            };
+
+            // Get the canvas element
+            var ctx = document.getElementById('userGraph').getContext('2d');
+
+            // Create the chart
+            var myChart = new Chart(ctx, {
+                type: 'line', // Change the type to line chart
+                data: chartData,
+                options: {
+                    maintainAspectRatio: false, // Disable aspect ratio
+                    responsive: true, // Ensure the chart remains responsive
+                    height: 200, // Set the height of the chart
+                    width: 200, // Set the width of the chart
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+
+            // Display choices list
+            var choicesList = document.getElementById('choicesList');
+            data.forEach(choice => {
+                var listItem = document.createElement('li');
+                listItem.textContent = choice.timestamp + ' - ' + choice.choice;
+                choicesList.appendChild(listItem);
+            });
+        }
+    </script>
 </body>
 </html>
