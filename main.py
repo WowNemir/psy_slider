@@ -116,8 +116,8 @@ def serve_admin_dashboard(psycho_id):
 @app.route('/client_history/<client_id>')
 def serve_client_history(client_id):
     client = Client.query.get(client_id)
-
-    return render_template('client_history.html', username=client.name)
+    choices = Choice.query.filter_by(client_id=client_id).all()
+    return render_template('client_history.html', client=client, choices=choices)
 
 if __name__ == "__main__":
     app.run(debug=True)

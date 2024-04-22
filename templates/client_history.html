@@ -3,7 +3,15 @@
 <head>
 </head>
 <body>
-    <h1>Графики для {{ username }}</h1>
+    <h1>Графики для {{ client.name }}</h1>
+    <div>
+        <h2>История выбора:</h2>
+        <ul>
+            {% for choice in choices %}
+            <li>{{ choice.timestamp }} - {{ choice.choice }}</li>
+            {% endfor %}
+        </ul>
+    </div>
     <div>
         <canvas id="userGraph"></canvas>
     </div>
