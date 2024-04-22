@@ -83,17 +83,17 @@ def register():
     db.session.commit()
 
     return redirect(url_for('serve_main_page'))
-@app.route('/add_client', methods=['GET', 'POST'])
-def add_client():
+
+
+@app.route('/<psycho_id>/add_client', methods=['GET', 'POST'])
+def add_client(psycho_id):
     if request.method == 'POST':
         name = request.form.get('name')
-        # Assuming the currently logged-in user is the psycho
-        psycho_id = request.form.get('user_id')
         new_client = Client(id=uuid.uuid1().hex, name=name, psycho_id=psycho_id)
         db.session.add(new_client)
         db.session.commit()
         return redirect(url_for('serve_admin_dashboard', psycho_id=psycho_id))
-    return render_template('add_client.html')
+    return render_template('add_client.html', psycho_id=psycho_id)
 
 # Route for serving the user page with a slider and send button
 @app.route('/client_page/<psycho_id>/<client_id>', methods=['GET', 'POST'])
