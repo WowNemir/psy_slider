@@ -17,7 +17,7 @@ class User(db.Model):
     role = db.Column(db.String(10))
     username = db.Column(db.String(255))
     password = db.Column(db.String(255))
-    salt = db.Column(db.String(255))  # Adding salt column
+    salt = db.Column(db.String(255))
     clients = db.relationship('Client', backref='user', lazy=True)
     choices = db.relationship('Choice', backref='user', lazy=True)
 
@@ -83,7 +83,19 @@ def register():
     db.session.commit()
 
     return redirect(url_for('serve_main_page'))
+@app.route('/add_client', methods=['GET', 'POST'])
+def add_client():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        # Assuming the currently logged-in user is the psycho
+        psycho_id = request.form.get('user_id')
+        new_client = Client(id=uuid.uuid1().hex, name=name, psycho_id=psycho_id)
+        db.session.add(new_client)
+        db.session.commit()
+        return redirect(url_for('serve_admin_dashboard'))
+    return render_template('add_client.html')
 
+# Create a new HTML template add_client.html for adding a client
 # @app.route('/select_role', methods=['POST'])
 # def serve_select_role():
 #     user_id = request.form.get('user_id')
@@ -114,15 +126,14 @@ def serve_сдшуте_page(client_id):
 
 @app.route('/admin_dashboard')
 def serve_admin_dashboard():
-  all_users = Client.query.all()
-#   user_dict = {user.id: user for user in all_users}
-  return render_template('admin_dashboard.html', all_users=all_users)
+  clients = Client.query.all()
+  return render_template('admin_dashboard.html', clients=clients)
 
-@app.route('/user_history/<user_id>')
-def serve_user_history(user_id):
-    user = User.query.get(user_id)
-    user_choices = user.choices if user else []
-    return render_template('user_history.html', user_id=user_id, user_choices=user_choices)
+@app.route('/client_history/<client_id>')
+def serve_client_history(client_id):
+    client = Client.query.get(client_id)
+
+    return render_template('client_history.html', username=client.name)
 
 if __name__ == "__main__":
     app.run(debug=True)

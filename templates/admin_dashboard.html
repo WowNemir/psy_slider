@@ -8,12 +8,23 @@
 <body>
     <h2>Клиенты:</h2>
     <ul>
-        {% for client_info in all_users %}
-            <li>
-                {{ client_info.username }},
-                <a href="{{ url_for('serve_user_history', user_id=client_info.id) }}">View History</a>
-            </li>
-        {% endfor %}
+        <form action="{{ url_for('add_client') }}">
+            <input type="submit" value="Add Client">
+        </form>
+        <br><br>
+        <table border="1">
+            <tr>
+                <th>Имя</th>
+                <th>Графики</th>
+            </tr>
+
+            {% for client in clients %}
+            <tr>
+                <td>{{ client.name }}</td>
+                <td><a href="{{ url_for('serve_client_history', client_id=client.id) }}">View History</a></td>
+            </tr>
+            {% endfor %}
+        </table>
     </ul>
 </body>
 </html>
