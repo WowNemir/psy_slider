@@ -83,10 +83,31 @@
             <tr>
                 <td>{{ client.name }}</td>
                 <td><a href="{{ url_for('serve_client_history', client_id=client.id) }}">View History</a></td>
-                <td><a href="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" class="share-icon">Share</a></td>
+                <td><a href="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" class="share-icon" onclick="setHasUnfinishedChoices('{{ client.id }}')">Share</a></td>
             </tr>
             {% endfor %}
         </table>
     </ul>
+
+    <script>
+        function setHasUnfinishedChoices(clientId) {
+            // Make an AJAX request to the API endpoint to set has_unfinished_choices
+            fetch(`/api/set_has_unfinished_choices/${clientId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to set has_unfinished_choices');
+                }
+                console.log('has_unfinished_choices set successfully');
+            })
+            .catch(error => {
+                console.error('Error setting has_unfinished_choices:', error);
+            });
+        }
+    </script>
 </body>
 </html>

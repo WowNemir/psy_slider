@@ -5,6 +5,7 @@ from datetime import datetime
 import bcrypt
 import pathlib
 from flask import jsonify
+
 app = Flask(__name__, template_folder="templates")
 
 cwd = pathlib.Path.cwd()
@@ -36,6 +37,7 @@ class Client(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     name = db.Column(db.String(255))
     psycho_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+    has_unfinished_choices = db.Column(db.Boolean, default=False)
     choices = db.relationship('Choice', backref='client', lazy=True)
 
 def calculate_hash(password, salt):
@@ -111,7 +113,7 @@ questions = {
 def serve_client_page(client_id, psycho_id):
     client = Client.query.filter_by(id=client_id).first()
 
-    if request.method == 'POST':
+    if client.has_unfinished_choices and request.method == 'POST':
         choices = []
         for key, value in request.form.items():
             if key.startswith('choice'):
@@ -122,9 +124,27 @@ def serve_client_page(client_id, psycho_id):
             new_choice = Choice(choice=choice, client_id=client_id, user_id=psycho_id, question=question)
             db.session.add(new_choice)
         db.session.commit()
+        
+        client.has_unfinished_choices = False
+        db.session.commit()
+
         return render_template('thank_you_page.html')
-    
-    return render_template('client_page.html', client=client, psycho_id=psycho_id, questions=questions)
+    elif client.has_unfinished_choices:
+        return render_template('client_page.html', client=client, psycho_id=psycho_id, questions=questions)
+    else:
+        return render_template('thank_you_page.html')
+
+def set_has_unfinished_choices(client_id):
+    client = Client.query.get(client_id)
+    if client:
+        client.has_unfinished_choices = True
+        db.session.commit()
+
+@app.route('/api/set_has_unfinished_choices/<client_id>', methods=['POST'])
+def api_set_has_unfinished_choices(client_id):
+    set_has_unfinished_choices(client_id)
+    return jsonify({'status': 'success'})
+
 
 @app.route('/api/choices/<client_id>')
 def get_client_choices(client_id):
