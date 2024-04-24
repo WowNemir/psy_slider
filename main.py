@@ -27,6 +27,8 @@ class Choice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     choice = db.Column(db.Integer)
+    question = db.Column(db.String(255))
+    share_link = db.Column(db.String(255))
     client_id = db.Column(db.String(50), db.ForeignKey('client.id'), nullable=False)
     user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
 
@@ -97,20 +99,32 @@ def add_client(psycho_id):
         return redirect(url_for('serve_admin_dashboard', psycho_id=psycho_id))
     return render_template('add_client.html', psycho_id=psycho_id)
 
-# Route for serving the user page with a slider and send button
+
+questions = {
+    'choice': 'Выберите доволность сессией:',
+    'choice2': 'Выберите уровень радости:',
+    'choice3': 'Выберите уровень печали:',
+    'choice4': 'Выберите уровень злости:'
+}
+
 @app.route('/client_page/<psycho_id>/<client_id>', methods=['GET', 'POST'])
 def serve_client_page(client_id, psycho_id):
     client = Client.query.filter_by(id=client_id).first()
 
     if request.method == 'POST':
-        choice = request.form.get('choice')
-        new_choice = Choice(choice=choice, client_id=client_id, user_id=psycho_id)
-        db.session.add(new_choice)
+        choices = []
+        for key, value in request.form.items():
+            if key.startswith('choice'):
+                question = questions.get(key, 'Unknown Question')
+                choices.append((value, question))
+        
+        for choice, question in choices:
+            new_choice = Choice(choice=choice, client_id=client_id, user_id=psycho_id, question=question)
+            db.session.add(new_choice)
         db.session.commit()
         return render_template('thank_you_page.html')
-    return render_template('client_page.html', client=client, psycho_id=psycho_id)
-
-
+    
+    return render_template('client_page.html', client=client, psycho_id=psycho_id, questions=questions)
 
 @app.route('/api/choices/<client_id>')
 def get_client_choices(client_id):
@@ -119,7 +133,8 @@ def get_client_choices(client_id):
     for choice in choices:
         choice_info = {
             'timestamp': choice.timestamp.strftime('%Y-%m-%d %H:%M:%S'),  # Convert to string format
-            'choice': choice.choice
+            'choice': choice.choice,
+            'question': choice.question
         }
         choices_data.append(choice_info)
     return jsonify(choices_data)

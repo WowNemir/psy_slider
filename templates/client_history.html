@@ -31,20 +31,32 @@
 
 
         function processData(data) {
-            // Extract labels and data from API response
-            var labels = data.map(choice => choice.timestamp);
-            var values = data.map(choice => choice.choice);
+            // Create an object to store datasets
+            var datasets = {};
 
-            // Create chart data
+            // Define an array of brighter colors (red, green, blue)
+            var colors = ['rgba(255, 0, 0, 0.2)', 'rgba(0, 255, 0, 0.2)', 'rgba(0, 0, 255, 0.2)', 'rgba(255, 128, 0, 0.2)', 'rgba(128, 0, 255, 0.2)', 'rgba(0, 255, 255, 0.2)'];
+
+            // Process data for each question field
+            data.forEach((choice, index) => {
+                // If dataset doesn't exist for the question field, create it
+                if (!datasets[choice.question]) {
+                    datasets[choice.question] = {
+                        label: choice.question, // Use question field as label
+                        data: [],
+                        backgroundColor: colors[index % colors.length], // Use a color from the array
+                        borderColor: colors[index % colors.length], // Use the same color for border
+                        borderWidth: 1
+                    };
+                }
+
+                // Add data to the dataset
+                datasets[choice.question].data.push({ x: choice.timestamp, y: choice.choice });
+            });
+
+            // Create chart data from datasets
             var chartData = {
-                labels: labels,
-                datasets: [{
-                    label: 'Choices',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1,
-                    data: values
-                }]
+                datasets: Object.values(datasets) // Convert datasets object to array
             };
 
             // Get the canvas element
@@ -57,12 +69,18 @@
                 options: {
                     maintainAspectRatio: false, // Disable aspect ratio
                     responsive: true, // Ensure the chart remains responsive
-                    height: 200, // Set the height of the chart
-                    width: 200, // Set the width of the chart
                     scales: {
+                        xAxes: [{
+                            type: 'time', // Use time scale for x-axis
+                            time: {
+                                unit: 'day' // Display timestamps by day
+                            }
+                        }],
                         yAxes: [{
                             ticks: {
-                                beginAtZero: true
+                                suggestedMin: 0, // Set the suggested minimum value for y-axis
+                                suggestedMax: 100, // Set the suggested maximum value for y-axis
+                                beginAtZero: true // Start y-axis from zero
                             }
                         }]
                     }
