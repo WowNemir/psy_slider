@@ -4,12 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> <!-- Include Font Awesome CSS -->
+    <style>
+        /* Styles for the Add Client button */
+        .add-client-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 8px;
+            cursor: pointer;
+            transition-duration: 0.4s;
+            margin-bottom: 20px;
+        }
+
+        .add-client-button:hover {
+            background-color: #45a049; /* Darker Green */
+        }
+
+        /* Styles for the table */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2; /* Light gray */
+        }
+
+        tr:hover {
+            background-color: #f5f5f5; /* Lighter gray on hover */
+        }
+
+        /* Styles for the share icon */
+        .share-icon {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #28a745; /* Green */
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .share-icon::after {
+            content: "\f1e0"; /* Font Awesome icon content for a share icon */
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 <body>
     <h2>Клиенты:</h2>
     <ul>
         <form action="{{ url_for('add_client', psycho_id=psycho_id) }}">
-            <input type="submit" value="Add Client">
+            <input type="submit" value="Добавить клиента" class="add-client-button">
         </form>
         <br><br>
         <table border="1">
@@ -23,7 +83,7 @@
             <tr>
                 <td>{{ client.name }}</td>
                 <td><a href="{{ url_for('serve_client_history', client_id=client.id) }}">View History</a></td>
-                <td><a href="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}">Share</a></td>
+                <td><a href="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" class="share-icon">Share</a></td>
             </tr>
             {% endfor %}
         </table>

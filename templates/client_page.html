@@ -14,7 +14,7 @@
     </style>
 </head>
 <body>
-    <h1>Welcome, User {{ client.name }}</h1>
+    <h1>Здравствуйте, {{ client.name }}</h1>
 
     <form action="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" method="post">
         <label for="choice">Выберите доволность сессией:</label>
