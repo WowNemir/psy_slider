@@ -148,16 +148,16 @@ def api_set_has_unfinished_choices(client_id):
 
 @app.route('/api/choices/<client_id>')
 def get_client_choices(client_id):
-    choices = Choice.query.filter_by(client_id=client_id).all()
-    choices_data = []
-    for choice in choices:
-        choice_info = {
-            'timestamp': choice.timestamp.strftime('%Y-%m-%d %H:%M:%S'),  # Convert to string format
-            'choice': choice.choice,
-            'question': choice.question
-        }
-        choices_data.append(choice_info)
-    return jsonify(choices_data)
+    tags1 = ["Random Question 1:", "Random Question 2:"]
+    tags2 = ["Выберите доволность сессией:", "Выберите уровень радости:", "Выберите уровень печали:"]
+
+    choices1 = Choice.query.filter(Choice.client_id == client_id, Choice.question.in_(tags1)).order_by(Choice.timestamp).all()
+    choices1_data = [{'timestamp': choice.timestamp.strftime('%Y-%m-%d %H:%M:%S'), 'choice': choice.choice, 'question': choice.question} for choice in choices1]
+
+    choices2 = Choice.query.filter(Choice.client_id == client_id, Choice.question.in_(tags2)).order_by(Choice.timestamp).all()
+    choices2_data = [{'timestamp': choice.timestamp.strftime('%Y-%m-%d %H:%M:%S'), 'choice': choice.choice, 'question': choice.question} for choice in choices2]
+
+    return jsonify([choices1_data, choices2_data])
 
 
 @app.route('/admin_dashboard/<psycho_id>')
@@ -168,7 +168,7 @@ def serve_admin_dashboard(psycho_id):
 @app.route('/client_history/<client_id>')
 def serve_client_history(client_id):
     client = Client.query.get(client_id)
-    choices = Choice.query.filter_by(client_id=client_id).all()
+    choices = Choice.query.filter_by(client_id=client_id).order_by("timestamp").all()
     return render_template('client_history.html', client=client, choices=choices)
 
 if __name__ == "__main__":
