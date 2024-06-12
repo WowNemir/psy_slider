@@ -55,19 +55,12 @@
             border-radius: 5px;
             text-align: center;
             text-decoration: none;
-            cursor: pointer; /* Add cursor pointer */
         }
-
+            border: none;
         .share-icon::after {
             content: "\f1e0"; /* Font Awesome icon content for a share icon */
             font-family: "Font Awesome 5 Free";
             font-weight: 900;
-            margin-left: 5px;
-        }
-
-        .copied-indicator {
-            display: none;
-            color: #28a745;
             margin-left: 5px;
         }
     </style>
@@ -85,33 +78,33 @@
                 <th>Графики</th>
                 <th>Ссылка с ползунком</th>
             </tr>
-
             {% for client in clients %}
             <tr>
                 <td>{{ client.name }}</td>
                 <td><a href="{{ url_for('serve_client_history', client_id=client.id) }}">View History</a></td>
-                <td>
-                    <a href="#" class="share-icon" onclick="copyToClipboard('{{ request.scheme }}://{{ request.host }}{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}')">Share</a>
-                    <span class="copied-indicator">Copied!</span>
-                </td>
+                <td><a href="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" class="share-icon" onclick="setHasUnfinishedChoices('{{ client.id }}')">Share</a></td>
             </tr>
             {% endfor %}
         </table>
     </ul>
-
     <script>
-        function copyToClipboard(text) {
-            var textField = document.createElement('textarea');
-            textField.innerText = text;
-            document.body.appendChild(textField);
-            textField.select();
-            document.execCommand('copy');
-            textField.remove();
-            var copiedIndicator = document.querySelector('.copied-indicator');
-            copiedIndicator.style.display = 'inline-block';
-            setTimeout(function() {
-                copiedIndicator.style.display = 'none';
-            }, 1000); // Hide after 1 second
+        function setHasUnfinishedChoices(clientId) {
+            // Make an AJAX request to the API endpoint to set has_unfinished_choices
+            fetch(`/api/set_has_unfinished_choices/${clientId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to set has_unfinished_choices');
+                }
+                console.log('has_unfinished_choices set successfully');
+            })
+            .catch(error => {
+                console.error('Error setting has_unfinished_choices:', error);
+            });
         }
     </script>
 </body>

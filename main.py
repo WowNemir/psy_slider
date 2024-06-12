@@ -130,7 +130,7 @@ def serve_client_page(client_id, psycho_id):
 
         return render_template('thank_you_page.html')
     elif client.has_unfinished_choices:
-        return render_template('client_page.html', client=client, psycho_id=psycho_id, questions=questions)
+        return render_template('client_page.html', client=client, psycho_id=psycho_id, questions1=questions, questions2=questions)
     else:
         return render_template('thank_you_page.html')
 
