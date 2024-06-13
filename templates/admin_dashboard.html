@@ -69,14 +69,26 @@
         tr:hover {
             background-color: #e9e9e9; /* Light gray on hover */
         }
-        .share-icon {
+        .action-button {
             display: inline-block;
             padding: 5px 10px;
-            background-color: #28a745; /* Green */
             color: white;
             border-radius: 5px;
             text-align: center;
             text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .view-history {
+            background-color: #007bff; /* Blue */
+        }
+        .view-history:hover {
+            background-color: #0056b3; /* Darker Blue */
+        }
+        .share-icon {
+            background-color: #28a745; /* Green */
+        }
+        .share-icon:hover {
+            background-color: #1e7e34; /* Darker Green */
         }
         .share-icon::after {
             content: "\f1e0"; /* Font Awesome icon content for a share icon */
@@ -101,8 +113,8 @@
             {% for client in clients %}
             <tr>
                 <td>{{ client.name }}</td>
-                <td><a href="{{ url_for('serve_client_history', client_id=client.id) }}">View History</a></td>
-                <td><a href="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" class="share-icon" onclick="setHasUnfinishedChoices('{{ client.id }}')">Share</a></td>
+                <td><a href="{{ url_for('serve_client_history', client_id=client.id) }}" class="action-button view-history">View History</a></td>
+                <td><a href="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" class="action-button share-icon" onclick="setHasUnfinishedChoices('{{ client.id }}')">Share</a></td>
             </tr>
             {% endfor %}
         </table>
