@@ -1,19 +1,50 @@
-<!-- main_page.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ПсихоКлиентоАналитика</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+        }
+        .fancy-button {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #6200ea;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .fancy-button:hover {
+            background-color: #3700b3;
+            transform: scale(1.05);
+        }
+    </style>
 </head>
 <body>
-    <h2>Выберите действие</h2>
-    <form action="/login" method="get">
-        <input type="submit" value="Войти">
-    </form>
+    <div class="container">
+        <form action="/login" method="get">
+            <input type="submit" value="Войти" class="fancy-button">
+        </form>
 
-    <form action="/register" method="get">
-        <input type="submit" value="Зарегистрироваться">
-    </form>
+        <form action="/register" method="get">
+            <input type="submit" value="Зарегистрироваться" class="fancy-button">
+        </form>
+    </div>
 </body>
 </html>
