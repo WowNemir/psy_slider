@@ -102,11 +102,17 @@ def add_client(psycho_id):
     return render_template('add_client.html', psycho_id=psycho_id)
 
 
-questions = {
-    'choice': 'Выберите доволность сессией:',
-    'choice2': 'Выберите уровень радости:',
-    'choice3': 'Выберите уровень печали:',
-    'choice4': 'Выберите уровень злости:'
+questions1 = {
+    'Отношение': "Чувствовали ли вы, что ваше отношение было положительно оценено и уважаемо?",
+    'Цели и темы': "Были ли обсуждены те темы или задачи, которые вы считали важными для данной консультации?",
+    'Подход и метод': "Насколько подход и метод работы терапевта соответствовали вашим ожиданиям и предпочтениям?",
+    'В целом': "Каково ваше общее впечатление от сегодняшней консультации?"
+}
+questions2 = {
+    "Индивидуально": "Как вы оцениваете ваше индивидуальное благополучие на прошедшей неделе?",
+    "В личных отношениях": "Как вы оцениваете ваши личные отношения за прошедшую неделю?",
+    "Социально": "Как вы оцениваете ваше социальное состояние на прошедшей неделе?",
+    "Личное благополучие": "Как вы оцениваете ваше общее ощущение благополучия на прошедшей неделе?"
 }
 
 @app.route('/client_page/<psycho_id>/<client_id>', methods=['GET', 'POST'])
@@ -116,9 +122,8 @@ def serve_client_page(client_id, psycho_id):
     if client.has_unfinished_choices and request.method == 'POST':
         choices = []
         for key, value in request.form.items():
-            if key.startswith('choice'):
-                question = questions.get(key, 'Unknown Question')
-                choices.append((value, question))
+            question = questions1.get(key) or questions2.get(key) or "unknown question"
+            choices.append((value, question))
         
         for choice, question in choices:
             new_choice = Choice(choice=choice, client_id=client_id, user_id=psycho_id, question=question)
@@ -130,7 +135,7 @@ def serve_client_page(client_id, psycho_id):
 
         return render_template('thank_you_page.html')
     elif client.has_unfinished_choices:
-        return render_template('client_page.html', client=client, psycho_id=psycho_id, questions1=questions, questions2=questions)
+        return render_template('client_page.html', client=client, psycho_id=psycho_id, questions1=questions1, questions2=questions2)
     else:
         return render_template('thank_you_page.html')
 
@@ -148,13 +153,11 @@ def api_set_has_unfinished_choices(client_id):
 
 @app.route('/api/choices/<client_id>')
 def get_client_choices(client_id):
-    tags1 = ["Random Question 1:", "Random Question 2:"]
-    tags2 = ["Выберите доволность сессией:", "Выберите уровень радости:", "Выберите уровень печали:"]
 
-    choices1 = Choice.query.filter(Choice.client_id == client_id, Choice.question.in_(tags1)).order_by(Choice.timestamp).all()
+    choices1 = Choice.query.filter(Choice.client_id == client_id, Choice.question.in_(questions1.values())).order_by(Choice.timestamp).all()
     choices1_data = [{'timestamp': choice.timestamp.strftime('%Y-%m-%d %H:%M:%S'), 'choice': choice.choice, 'question': choice.question} for choice in choices1]
 
-    choices2 = Choice.query.filter(Choice.client_id == client_id, Choice.question.in_(tags2)).order_by(Choice.timestamp).all()
+    choices2 = Choice.query.filter(Choice.client_id == client_id, Choice.question.in_(questions2.values())).order_by(Choice.timestamp).all()
     choices2_data = [{'timestamp': choice.timestamp.strftime('%Y-%m-%d %H:%M:%S'), 'choice': choice.choice, 'question': choice.question} for choice in choices2]
 
     return jsonify([choices1_data, choices2_data])
