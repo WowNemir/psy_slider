@@ -10,8 +10,12 @@ app = Flask(__name__, template_folder="templates")
 
 cwd = pathlib.Path.cwd()
 
-if str(cwd).endswith('nemir'):
+def is_production():
+    return str(cwd).endswith('nemir')
+
+if is_production():
     cwd = cwd / "psy_slider"
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(cwd / 'instance' / 'site.db')
 db = SQLAlchemy(app)
 
@@ -174,4 +178,7 @@ def serve_client_history(client_id):
     return render_template('client_history.html', client=client, choices=choices)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    if is_production:
+        app.run()
+    else:
+        app.run(debug=True)
