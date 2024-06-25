@@ -4,54 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Client</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .container h2 {
-            margin-bottom: 20px;
-        }
-        .container label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .container input[type="text"],
-        .container input[type="submit"] {
-            width: calc(100% - 20px); /* Full width minus padding */
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box; /* Include padding in width */
-        }
-        .container input[type="submit"] {
-            background-color: #6200ea;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.3s;
-        }
-        .container input[type="submit"]:hover {
-            background-color: #3700b3;
-            transform: scale(1.05);
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
 </head>
 <body>
     <div class="container">

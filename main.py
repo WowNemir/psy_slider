@@ -6,7 +6,7 @@ import bcrypt
 import pathlib
 from flask import jsonify
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder="templates", static_folder="static/css")
 
 cwd = pathlib.Path.cwd()
 
