@@ -9,12 +9,24 @@
 </head>
 <body>
     <div class="container">
-        <h2>Add Client</h2>
+        <div class="header">
+            <div class="username-box">
+                <p class="username">{{ current_user.username }}</p>
+            </div>     
+            <form action="{{ url_for('serve_admin_dashboard') }}" method="get">
+                <button type="submit" class="back-link">
+                    <i class="fas fa-home"></i> Home
+                </button>
+            </form>   
+            <form action="{{ url_for('logout') }}" method="get">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+        </div>
         <form action="{{ url_for('add_client', psycho_id=psycho_id) }}" method="post">
-            <label for="name">Name:</label>
+            <label for="name">Имя:</label>
             <input type="text" id="name" name="name" required>
             <input type="hidden" name="psycho_id" value="{{ psycho_id }}">
-            <input type="submit" value="Add Client">
+            <input type="submit" value="Добавить Клиента">
         </form>
     </div>
 </body>

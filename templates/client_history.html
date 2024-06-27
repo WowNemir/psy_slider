@@ -6,18 +6,28 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-
 </head>
 <body>
     <div class="container">
-        <h1>Графики для {{ client.name }}</h1>
-        <div>
-            <a href="{{ url_for('serve_admin_dashboard', psycho_id=client.psycho_id) }}" title="Back to Admin Dashboard" class="back-link">
-                <i class="fas fa-home"></i> Home
-            </a>
+        <div class="header">
+            <div class="username-box">
+                <p class="username">{{ current_user.username }}</p>
+            </div>        
+            <form action="{{ url_for('serve_admin_dashboard') }}" method="get">
+                <button type="submit" class="back-link">
+                    <i class="fas fa-home"></i> Home
+                </button>
+            </form>
+            <form action="{{ url_for('logout') }}" method="get">
+                <button type="submit" class="logout-button">Logout</button>
+            </form>
+
         </div>
+        <h1>Графики для {{ client.name }}</h1>
+
+
         <div>
-            <h2>История выбора:</h2>
+            <h2>До сессии:</h2>
             <div class="logs-container">
                 <ul id="choicesList1">
                 </ul>
@@ -28,7 +38,7 @@
         </div>
 
         <div>
-            <h2>История выбора:</h2>
+            <h2>После сессии:</h2>
             <div class="logs-container">
                 <ul id="choicesList2">
                 </ul>
@@ -58,8 +68,14 @@
 
         function processData(data, graphId, listId) {
             var datasets = {};
-            var colors = ['rgba(255, 0, 0, 0.2)', 'rgba(0, 255, 0, 0.2)', 'rgba(0, 0, 255, 0.2)', 'rgba(255, 128, 0, 0.2)', 'rgba(128, 0, 255, 0.2)', 'rgba(0, 255, 255, 0.2)'];
-
+            var colors = [
+                'rgba(255, 99, 132, 0.6)',    // Red
+                'rgba(54, 162, 235, 0.6)',    // Blue
+                'rgba(255, 206, 86, 0.6)',    // Yellow
+                'rgba(75, 192, 192, 0.6)',    // Green
+                'rgba(153, 102, 255, 0.6)',   // Purple
+                'rgba(255, 159, 64, 0.6)'     // Orange
+            ];
             data.forEach((choice, index) => {
                 if (!datasets[choice.question]) {
                     datasets[choice.question] = {

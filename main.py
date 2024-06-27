@@ -5,7 +5,7 @@ from datetime import datetime
 import bcrypt
 import pathlib
 from flask import jsonify
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 import os
 
 app = Flask(__name__, template_folder="templates", static_folder="static/css")
@@ -24,7 +24,7 @@ if is_production():
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(cwd / 'instance' / 'site.db')
 db = SQLAlchemy(app)
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.String(50), primary_key=True)
     role = db.Column(db.String(10))
     username = db.Column(db.String(255))
@@ -33,27 +33,24 @@ class User(db.Model):
     clients = db.relationship('Client', backref='user', lazy=True)
     choices = db.relationship('Choice', backref='user', lazy=True)
 
-    def is_authenticated(self):
-        return True
-
-    def is_active(self):
-        return True
-
-    def is_anonymous(self):
-        return False
-
-    def get_id(self):
-        return self.id
-    
+class Session(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.String(50), db.ForeignKey('client.id'), nullable=False)
+    start_time = db.Column(db.DateTime, default=datetime.now)
+    pre_session_completed = db.Column(db.Boolean, default=False)
+    post_session_completed = db.Column(db.Boolean, default=False)
+    choices = db.relationship('Choice', backref='session', lazy=True)
 
 class Choice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=datetime.now)
     choice = db.Column(db.Integer)
     question = db.Column(db.String(255))
     share_link = db.Column(db.String(255))
     client_id = db.Column(db.String(50), db.ForeignKey('client.id'), nullable=False)
     user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'), nullable=False)
+
 
 class Client(db.Model):
     id = db.Column(db.String(50), primary_key=True)

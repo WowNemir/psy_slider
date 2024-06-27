@@ -17,6 +17,8 @@ body {
     width: 100%;
     max-width: 800px;
     margin-bottom: 20px;
+    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 80vh; /* Limit maximum height and enable scrolling when content exceeds */
 }
 
 .header {
@@ -125,7 +127,14 @@ tr:hover {
     background-color: #e9e9e9;
 }
 
-.action-button,
+.action-button {
+    display: inline-block; /* Ensures it respects the specified width */
+    width: 150px; /* Adjust this width according to your design */
+    text-align: center; /* Center the text */
+    padding: 10px; /* Adjust padding as needed */
+    box-sizing: border-box; /* Ensures padding and border are included in width */
+    white-space: nowrap; /* Prevents text from wrapping */
+}
 .view-history,
 .share-icon {
     padding: 8px 16px;
@@ -191,4 +200,83 @@ tr:hover {
 .disabled {
     pointer-events: none;
     opacity: 0.6;
+}
+
+.container {
+    text-align: center;
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.username {
+    margin: 0;
+    font-weight: bold;
+}
+
+.logout-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+    background-color: #c82333;
+}
+
+.logs-container {
+    max-height: 150px; /* Adjust height as needed */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-size: 14px; /* Adjust font size for history */
+    text-align: left; /* Ensure text is aligned properly */
+}
+
+.graph-container {
+    margin-bottom: 20px;
+}
+
+.graph-container canvas {
+    width: 100%; /* Ensure canvas takes full width */
+    height: 400px; /* Adjust height of graphs */
+}
+
+.back-link {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    cursor: pointer;
+    display: inline-block;
+    margin-bottom: 10px; /* Add margin to separate from other content */
+}
+
+.back-link:hover {
+    background-color: #0056b3;
+}
+.logs-container {
+    display: none; /* Hide the logs container */
 }
