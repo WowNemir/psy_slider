@@ -58,24 +58,28 @@
                     throw new Error('Failed to set has_unfinished_choices');
                 }
                 console.log('has_unfinished_choices set successfully');
-                
-                // Clipboard copy
-                const fullUrl = window.location.origin + clientPageUrl;
-                navigator.clipboard.writeText(fullUrl)
-                    .then(() => {
-                        console.log('URL copied to clipboard:', fullUrl);
-                        // Optionally, notify the user of successful copy
 
-                        // Restore button after 2 seconds
-                        setTimeout(() => {
-                            button.classList.remove('disabled');
-                            button.innerHTML = '<i class="fas fa-share"></i> Скопировать';
-                        }, 1500);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy URL to clipboard:', err);
-                        // Handle clipboard copy failure
-                    });
+                // Clipboard copy fallback
+                const fullUrl = window.location.origin + clientPageUrl;
+                const tempInput = document.createElement('input');
+                tempInput.style.position = 'absolute';
+                tempInput.style.left = '-9999px';
+                tempInput.value = fullUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    console.log('URL copied to clipboard:', fullUrl);
+                } catch (err) {
+                    console.error('Failed to copy URL to clipboard:', err);
+                }
+                document.body.removeChild(tempInput);
+
+                // Restore button after 2 seconds
+                setTimeout(() => {
+                    button.classList.remove('disabled');
+                    button.innerHTML = '<i class="fas fa-share"></i> Скопировать';
+                }, 1500);
             })
             .catch(error => {
                 console.error('Error setting has_unfinished_choices:', error);
