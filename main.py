@@ -5,8 +5,13 @@ from datetime import datetime
 import bcrypt
 import pathlib
 from flask import jsonify
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+import os
 
 app = Flask(__name__, template_folder="templates", static_folder="static/css")
+app.secret_key = os.getenv('FLASK_SECRET_KEY', default='default_secret_key_here')
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
 
 cwd = pathlib.Path.cwd()
 
@@ -28,6 +33,19 @@ class User(db.Model):
     clients = db.relationship('Client', backref='user', lazy=True)
     choices = db.relationship('Choice', backref='user', lazy=True)
 
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return self.id
+    
+
 class Choice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -43,6 +61,10 @@ class Client(db.Model):
     psycho_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
     has_unfinished_choices = db.Column(db.Boolean, default=False)
     choices = db.relationship('Choice', backref='client', lazy=True)
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
 
 def calculate_hash(password, salt):
     return bcrypt.hashpw(password.encode('utf-8'), salt.encode('utf-8')).decode('utf-8')
@@ -66,13 +88,17 @@ def serve_register_page():
 def login():
     username = request.form['username']
     password = request.form['password']
-    user = User.query.filter_by(username=username).first()
-    if user and calculate_hash(password, user.salt) == user.password:
-        return redirect(url_for('serve_admin_dashboard', psycho_id=user.id))
-    else:
-        return "Invalid username or password"
 
-@app.route('/register', methods=['POST'])
+    user = User.query.filter_by(username=username).first()
+
+    if user:
+        if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+
+            login_user(user)
+            return redirect(url_for('serve_admin_dashboard'))
+    
+    return "Invalid username or password"
+
 def register():
     new_username = request.form['new_username']
     new_password = request.form['new_password']
@@ -95,15 +121,16 @@ def register():
     return redirect(url_for('serve_main_page'))
 
 
-@app.route('/<psycho_id>/add_client', methods=['GET', 'POST'])
-def add_client(psycho_id):
+@app.route('/add_client', methods=['GET', 'POST'])
+@login_required
+def add_client():
     if request.method == 'POST':
         name = request.form.get('name')
-        new_client = Client(id=uuid.uuid1().hex, name=name, psycho_id=psycho_id)
+        new_client = Client(id=uuid.uuid1().hex, name=name, psycho_id=current_user.id)
         db.session.add(new_client)
         db.session.commit()
-        return redirect(url_for('serve_admin_dashboard', psycho_id=psycho_id))
-    return render_template('add_client.html', psycho_id=psycho_id)
+        return redirect(url_for('serve_admin_dashboard'))
+    return render_template('add_client.html', psycho_id=current_user.get_id())
 
 
 questions1 = {
@@ -149,12 +176,14 @@ def set_has_unfinished_choices(client_id):
         db.session.commit()
 
 @app.route('/api/set_has_unfinished_choices/<client_id>', methods=['POST'])
+@login_required
 def api_set_has_unfinished_choices(client_id):
     set_has_unfinished_choices(client_id)
     return jsonify({'status': 'success'})
 
 
 @app.route('/api/choices/<client_id>')
+@login_required
 def get_client_choices(client_id):
 
     choices1 = Choice.query.filter(Choice.client_id == client_id, Choice.question.in_(questions1.values())).order_by(Choice.timestamp).all()
@@ -166,16 +195,27 @@ def get_client_choices(client_id):
     return jsonify([choices1_data, choices2_data])
 
 
-@app.route('/admin_dashboard/<psycho_id>')
-def serve_admin_dashboard(psycho_id):
-  clients = Client.query.filter_by(psycho_id=psycho_id).all()
-  return render_template('admin_dashboard.html', clients=clients, psycho_id=psycho_id)
+@app.route('/admin_dashboard/')
+@login_required
+def serve_admin_dashboard():
+  clients = Client.query.filter_by(psycho_id=current_user.get_id()).all()
+  return render_template('admin_dashboard.html', clients=clients, psycho_id=current_user.get_id())
+
 
 @app.route('/client_history/<client_id>')
+@login_required
 def serve_client_history(client_id):
     client = Client.query.get(client_id)
     choices = Choice.query.filter_by(client_id=client_id).order_by("timestamp").all()
     return render_template('client_history.html', client=client, choices=choices)
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('serve_main_page'))
+
 
 if __name__ == "__main__":
     if is_production:
