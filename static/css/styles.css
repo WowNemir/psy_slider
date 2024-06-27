@@ -17,8 +17,8 @@ body {
     width: 100%;
     max-width: 800px;
     margin-bottom: 20px;
-    overflow-y: auto; /* Enable vertical scrolling */
-    max-height: 80vh; /* Limit maximum height and enable scrolling when content exceeds */
+    overflow-y: auto;
+    max-height: 80vh;
 }
 
 .header {
@@ -128,12 +128,12 @@ tr:hover {
 }
 
 .action-button {
-    display: inline-block; /* Ensures it respects the specified width */
-    width: 150px; /* Adjust this width according to your design */
-    text-align: center; /* Center the text */
-    padding: 10px; /* Adjust padding as needed */
-    box-sizing: border-box; /* Ensures padding and border are included in width */
-    white-space: nowrap; /* Prevents text from wrapping */
+    display: inline-block;
+    width: 150px;
+    text-align: center;
+    padding: 10px;
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 .view-history,
 .share-icon {
@@ -185,7 +185,7 @@ tr:hover {
     content: "\f1e0";
 }
 .username-box {
-    background-color: #ffae00;
+    background-color: #efe6d4;
     color: black;
     padding: 8px 16px;
     border-radius: 5px;
@@ -242,14 +242,14 @@ tr:hover {
 }
 
 .logs-container {
-    max-height: 150px; /* Adjust height as needed */
-    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 150px;
+    overflow-y: auto;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
     margin-bottom: 20px;
-    font-size: 14px; /* Adjust font size for history */
-    text-align: left; /* Ensure text is aligned properly */
+    font-size: 14px;
+    text-align: left;
 }
 
 .graph-container {
@@ -257,8 +257,8 @@ tr:hover {
 }
 
 .graph-container canvas {
-    width: 100%; /* Ensure canvas takes full width */
-    height: 400px; /* Adjust height of graphs */
+    width: 100%;
+    height: 400px;
 }
 
 .back-link {
@@ -271,12 +271,12 @@ tr:hover {
     transition: background-color 0.3s;
     cursor: pointer;
     display: inline-block;
-    margin-bottom: 10px; /* Add margin to separate from other content */
+    margin-bottom: 10px;
 }
 
 .back-link:hover {
     background-color: #0056b3;
 }
 .logs-container {
-    display: none; /* Hide the logs container */
+    display: none;
 }
