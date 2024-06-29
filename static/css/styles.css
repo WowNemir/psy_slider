@@ -303,3 +303,39 @@ tr:hover {
     display: inline-block; /* Display as a block element */
     margin-bottom: 10px; /* Add margin if needed */
 }
+
+h1 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label {
+    margin-bottom: 8px;
+    color: #666;
+}
+
+input[type="range"] {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}

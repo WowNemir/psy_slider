@@ -7,16 +7,18 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Здравствуйте, {{ client.name }}</h1>
+    <div class="container">
+        <h1>Здравствуйте, {{ client.name }}</h1>
 
-    <form id="questionForm" action="{{ url_for('serve_client_page', share_uid=session.share_uid) }}?type={{ questions_type }}" method="post">
-        <div id="secondSet" class="hidden">
-            {% for question in questions %}
-                <label for="{{ question.id }}">{{ question.question }}</label>
-                <input type="range" name="{{ question.id }}" id="{{ question.id }}" min="0" max="100" value="50" step="1" style="width: 100%;">
-            {% endfor %}
-            <button type="submit">Отправить</button>
-        </div>
-    </form>
+        <form id="questionForm" action="{{ url_for('serve_client_page', share_uid=session.share_uid) }}?type={{ questions_type }}" method="post">
+            <div id="secondSet">
+                {% for question in questions %}
+                    <label for="{{ question.id }}">{{ question.text }}</label>
+                    <input type="range" name="{{ question.id }}" id="{{ question.id }}" min="0" max="100" value="50" step="1">
+                {% endfor %}
+                <button type="submit">Отправить</button>
+            </div>
+        </form>
+    </div>
 </body>
 </html>
