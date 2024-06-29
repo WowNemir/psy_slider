@@ -27,34 +27,74 @@
                 <th>Имя</th>
                 <th>Графики</th>
                 <th>Ссылка с ползунком</th>
+                <th>Действия</th>
             </tr>
             {% for client in clients %}
             <tr>
-                <td>{{ client.name }}</td>
-                <td><a href="{{ url_for('serve_client_history', client_id=client.id) }}" class="action-button view-history"><i class="fas fa-eye"></i> Посмотреть</a></td>
+                <td>{{ client.client.name }}</td>
+                <td><a href="{{ url_for('serve_client_history', client_id=client.client.id) }}" class="action-button view-history"><i class="fas fa-eye"></i> Посмотреть</a></td>
                 <td>
-                    <a href="#" class="action-button share-icon" onclick="copyToClipboardAndSetFlag('{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id, type='pre') }}', '{{ client.id }}', this, 'pre')">
-                        <i class="fas fa-copy"></i> До сессии
-                    </a>
-                    <a href="#" class="action-button share-icon" onclick="copyToClipboardAndSetFlag('{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id, type='post') }}', '{{ client.id }}', this, 'post')">
-                        <i class="fas fa-copy"></i> После сессии
-                    </a>
-                </td>  
+                    {% if client.active_session %}
+                        <a href="#" class="action-button share-icon" onclick="copyToClipboard('{{ url_for('serve_client_page', share_uid=client.active_session.share_uid) }}?type=pre', '{{ client.client.id }}', this)">
+                            <i class="fas fa-copy"></i> До сессии
+                        </a>
+                        <a href="#" class="action-button share-icon" onclick="copyToClipboard('{{ url_for('serve_client_page', share_uid=client.active_session.share_uid) }}?type=post', '{{ client.client.id }}', this)">
+                            <i class="fas fa-copy"></i> После сессии
+                        </a>
+                    {% else %}
+                        <span class="disabled-button"><i class="fas fa-copy"></i> До сессии</span>
+                        <span class="disabled-button"><i class="fas fa-copy"></i> После сессии</span>
+                    {% endif %}
+                </td>
+                
+                <td>
+                    {% if client.active_session %}
+                        <a href="#" class="action-button finish-session" onclick="finishSession('{{ client.client.id }}', this)">
+                            <i class="fas fa-stop"></i> Завершить сессию
+                        </a>
+                    {% else %}
+                        <a href="#" class="action-button start-session" onclick="startSession('{{ client.client.id }}', this)">
+                            <i class="fas fa-play"></i> Начать сессию
+                        </a>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </table>
     </div>
     <script>
-        function copyToClipboardAndSetFlag(clientPageUrl, clientId, button) {
-            // Store original button text
+        function copyToClipboard(clientPageUrl, clientId, button) {
+
             const originalButtonText = button.innerHTML;
     
-            // Disable button and change text
             button.classList.add('disabled');
             button.innerHTML = '<i class="fas fa-check"></i> Скопировано';
     
-            // AJAX to set has_unfinished_choices
-            fetch(`/api/set_has_unfinished_choices/${clientId}`, {
+            const fullUrl = window.location.origin + clientPageUrl;
+            const tempInput = document.createElement('input');
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px';
+            tempInput.value = fullUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                console.log('URL copied to clipboard:', fullUrl);
+            } catch (err) {
+                console.error('Failed to copy URL to clipboard:', err);
+            }
+            document.body.removeChild(tempInput);
+            setTimeout(() => {
+                button.classList.remove('disabled');
+                button.innerHTML = originalButtonText;
+            }, 1500);
+        }
+    
+        function startSession(clientId, button) {
+            button.classList.add('disabled');
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+            button.classList.add('disabled');
+            fetch(`/api/start_session/${clientId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -62,36 +102,60 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Failed to set has_unfinished_choices');
+                    throw new Error('Failed to start session');
                 }
-                console.log('has_unfinished_choices set successfully');
-    
-                // Clipboard copy fallback
-                const fullUrl = window.location.origin + clientPageUrl;
-                const tempInput = document.createElement('input');
-                tempInput.style.position = 'absolute';
-                tempInput.style.left = '-9999px';
-                tempInput.value = fullUrl;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                try {
-                    document.execCommand('copy');
-                    console.log('URL copied to clipboard:', fullUrl);
-                } catch (err) {
-                    console.error('Failed to copy URL to clipboard:', err);
-                }
-                document.body.removeChild(tempInput);
-    
-                // Restore button after 2 seconds
-                setTimeout(() => {
-                    button.classList.remove('disabled');
-                    button.innerHTML = originalButtonText;
-                }, 2000); // Adjust the delay as needed (2000ms = 2 seconds)
+                return response.json();
             })
+            // .then(data => {
+            //     console.log('Session started successfully:', data);
+            //     button.innerHTML = '<i class="fas fa-stop"></i> Завершить сессию';
+            //     button.classList.remove('start-session');
+            //     button.classList.add('finish-session');
+            //     button.setAttribute('onclick', `finishSession('${clientId}', this)`);
+    
+            //     setTimeout(() => {
+            //         button.classList.remove('disabled');
+            //     }, 1500);
+            // })
             .catch(error => {
-                console.error('Error setting has_unfinished_choices:', error);
+                console.error('Error starting session:', error);
+                button.classList.remove('disabled');
+                button.innerHTML = '<i class="fas fa-play"></i> Начать сессию';
+            });
+        }
+    
+        function finishSession(clientId, button) {
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finishing...';
+            button.classList.add('disabled');
+            fetch(`/api/finish_session/${clientId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to finish session');
+                }
+                return response.json();
+            })
+            // .then(data => {
+            //     console.log('Session finished successfully:', data);
+            //     button.innerHTML = '<i class="fas fa-play"></i> Начать сессию';
+            //     button.classList.remove('finish-session');
+            //     button.classList.add('start-session');
+            //     button.setAttribute('onclick', `startSession('${clientId}', this)`);
+            //     setTimeout(() => {
+            //         button.classList.remove('disabled');
+            //     }, 1500);
+            // })
+            .catch(error => {
+                console.error('Error finishing session:', error);
+                button.classList.remove('disabled');
+                button.innerHTML = '<i class="fas fa-stop"></i> Завершить сессию';
             });
         }
     </script>
+    
 </body>
 </html>

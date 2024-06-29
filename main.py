@@ -14,6 +14,8 @@ from flask_login import (
     UserMixin,
 )
 import os
+import enum
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__, template_folder="templates", static_folder="static/css")
 app.secret_key = os.getenv("FLASK_SECRET_KEY", default="default_secret_key_here")
@@ -44,32 +46,83 @@ class User(db.Model, UserMixin):
     choices = db.relationship("Choice", backref="user", lazy=True)
 
 
+class SessionStatus(enum.Enum):
+    STARTED = "started"
+    FINISHED = "finished"
+    CANCELED = "canceled"
+
+
 class Session(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     client_id = db.Column(db.String(50), db.ForeignKey("client.id"), nullable=False)
     start_time = db.Column(db.DateTime, default=datetime.now)
     pre_session_completed = db.Column(db.Boolean, default=False)
     post_session_completed = db.Column(db.Boolean, default=False)
+    status = db.Column(db.Enum(SessionStatus), default=SessionStatus.STARTED)
+    share_uid = db.Column(db.String(50), default=lambda: uuid.uuid4().hex)
     choices = db.relationship("Choice", backref="session", lazy=True)
+    client = db.relationship("Client", backref="sessions", lazy=True)
+
+    def cancel(self):
+        self.status = SessionStatus.CANCELED
+        db.session.commit()
+
+    def finish(self):
+        self.status = SessionStatus.FINISHED
+        db.session.commit()
+
+    @property
+    def active_choices(self):
+        return Choice.query.filter_by(session_id=self.id).all()
 
 
 class Choice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.now)
     choice = db.Column(db.Integer)
-    question = db.Column(db.String(255))
-    share_link = db.Column(db.String(255))
     client_id = db.Column(db.String(50), db.ForeignKey("client.id"), nullable=False)
     user_id = db.Column(db.String(50), db.ForeignKey("user.id"), nullable=False)
     session_id = db.Column(db.Integer, db.ForeignKey("session.id"), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey("question.id"), nullable=False)
+
+    @property
+    def session_info(self):
+        return Session.query.filter_by(id=self.session_id).first()
+
+
+class Question(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    theme = db.Column(db.String(255), nullable=False)
+    text = db.Column(db.String(255), nullable=False)
+    type = db.Column(db.String(50), nullable=False)
+    choices = db.relationship("Choice", backref="question", lazy=True)
+
+    @property
+    def pre_session_questions(self):
+        return Question.query.filter_by(type="before_session").all()
+
+    @property
+    def post_session_questions(self):
+        return Question.query.filter_by(type="after_session").all()
 
 
 class Client(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     name = db.Column(db.String(255))
-    psycho_id = db.Column(db.String(50), db.ForeignKey("user.id"), nullable=False)
+    user_id = db.Column(db.String(50), db.ForeignKey("user.id"), nullable=False)
     has_unfinished_choices = db.Column(db.Boolean, default=False)
     choices = db.relationship("Choice", backref="client", lazy=True)
+
+    @property
+    def active_session(self):
+        active_session = Session.query.filter_by(
+            client_id=self.id, status=SessionStatus.STARTED
+        ).first()
+        return active_session if active_session else None
+
+    @property
+    def client_choices(self):
+        return Choice.query.filter_by(client_id=self.id).all()
 
 
 @login_manager.user_loader
@@ -145,56 +198,110 @@ def register():
 def add_client():
     if request.method == "POST":
         name = request.form.get("name")
-        new_client = Client(id=uuid.uuid1().hex, name=name, psycho_id=current_user.id)
+        new_client = Client(id=uuid.uuid1().hex, name=name, user_id=current_user.id)
         db.session.add(new_client)
         db.session.commit()
         return redirect(url_for("serve_admin_dashboard"))
-    return render_template("add_client.html", psycho_id=current_user.get_id())
+    return render_template("add_client.html", user_id=current_user.get_id())
 
 
-questions1 = {
-    "Индивидуально": "Как вы оцениваете ваше индивидуальное благополучие на прошедшей неделе?",
-    "В личных отношениях": "Как вы оцениваете ваши личные отношения за прошедшую неделю?",
-    "Социально": "Как вы оцениваете ваше социальное состояние на прошедшей неделе?",
-    "Личное благополучие": "Как вы оцениваете ваше общее ощущение благополучия на прошедшей неделе?",
-}
-questions2 = {
-    "Отношение": "Чувствовали ли вы, что ваше отношение было положительно оценено и уважаемо?",
-    "Цели и темы": "Были ли обсуждены те темы или задачи, которые вы считали важными для данной консультации?",
-    "Подход и метод": "Насколько подход и метод работы терапевта соответствовали вашим ожиданиям и предпочтениям?",
-    "В целом": "Каково ваше общее впечатление от сегодняшней консультации?",
-}
+@app.route("/client_page/<share_uid>", methods=["POST", "GET"])
+def serve_client_page(share_uid):
+    questions_type = request.args.get("type")
 
+    session = Session.query.filter_by(share_uid=share_uid).first()
+    client = session.client if session else None
+    user = client.user if client else None
 
-@app.route("/client_page/<psycho_id>/<client_id>", methods=["GET", "POST"])
-def serve_client_page(client_id, psycho_id):
-    client = Client.query.filter_by(id=client_id).first()
+    if request.method == "POST":
 
-    if client.has_unfinished_choices and request.method == "POST":
-        choices = []
-        for key, value in request.form.items():
-            question = questions1.get(key) or questions2.get(key) or "unknown question"
-            choices.append((value, question))
-
-        for choice, question in choices:
+        for question_id, value in request.form.items():
             new_choice = Choice(
-                choice=choice, client_id=client_id, user_id=psycho_id, question=question
+                choice=value,
+                client_id=client.id,
+                user_id=user.id,
+                question_id=question_id,
+                session_id=session.id,
             )
             db.session.add(new_choice)
-        client.has_unfinished_choices = False
+        if questions_type == "pre":
+            session.pre_session_completed = True
+        elif questions_type == "post":
+            session.post_session_completed = True
+
+        if (
+            session.pre_session_completed is True
+            and session.post_session_completed is True
+        ):
+            session.status = SessionStatus.FINISHED
         db.session.commit()
 
-        return render_template("thank_you_page.html")
-    elif client.has_unfinished_choices:
-        return render_template(
-            "client_page.html",
-            client=client,
-            psycho_id=psycho_id,
-            questions1=questions1,
-            questions2=questions2,
-        )
+    elif request.method == "GET":
+        if questions_type == "pre" and not session.pre_session_completed:
+            return render_template(
+                "client_page.html",
+                client=client,
+                session=session,
+                user_id=current_user.id,
+                questions_type=questions_type,
+                questions=Question().pre_session_questions,
+            )
+        elif questions_type == "post" and not session.post_session_completed:
+            return render_template(
+                "client_page.html",
+                client=client,
+                session=session,
+                user_id=current_user.id,
+                questions_type=questions_type,
+                questions=Question().post_session_questions,
+            )
+    return render_template("thank_you_page.html")
+
+
+@app.route("/api/start_session/<client_id>", methods=["POST"])
+@login_required
+def start_session(client_id):
+    client = Client.query.get(client_id)
+    if client:
+        active_session = Session.query.filter_by(
+            client_id=client_id, status=SessionStatus.STARTED
+        ).first()
+        if active_session:
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": "Session already started",
+                    "session_id": active_session.id,
+                }
+            )
+        new_session = Session(client_id=client_id, status=SessionStatus.STARTED)
+        db.session.add(new_session)
+        db.session.commit()
+        return jsonify({"status": "success", "session_id": new_session.id})
+    return jsonify({"status": "error", "message": "Client not found"}), 404
+
+
+@app.route("/api/finish_session/<client_id>", methods=["POST"])
+@login_required
+def finish_session(client_id):
+    session = Client.query.get(client_id).active_session
+
+    if session:
+        if session.status == SessionStatus.STARTED:
+            session.finish()
+            db.session.commit()
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": f"Session {session.id} finished successfully",
+                }
+            )
+        else:
+            return jsonify(
+                {"status": "error", "message": f"Session {session.id} already finished"}
+            )
     else:
-        return render_template("thank_you_page.html")
+        return jsonify({"status": "error", "message": "Session not found"}), 404
 
 
 def set_has_unfinished_choices(client_id):
@@ -214,35 +321,39 @@ def api_set_has_unfinished_choices(client_id):
 @app.route("/api/choices/<client_id>")
 @login_required
 def get_client_choices(client_id):
-
     choices1 = (
         Choice.query.filter(
-            Choice.client_id == client_id, Choice.question.in_(questions1.values())
+            Choice.client_id == client_id, Choice.question.has(type="before_session")
         )
+        .options(joinedload(Choice.question))  # Eagerly load the related Question
         .order_by(Choice.timestamp)
         .all()
     )
+
     choices1_data = [
         {
             "timestamp": choice.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             "choice": choice.choice,
-            "question": choice.question,
+            "question": choice.question.text,
+            "theme": choice.question.theme,
         }
         for choice in choices1
     ]
-
     choices2 = (
         Choice.query.filter(
-            Choice.client_id == client_id, Choice.question.in_(questions2.values())
+            Choice.client_id == client_id, Choice.question.has(type="before_session")
         )
+        .options(joinedload(Choice.question))  # Eagerly load the related Question
         .order_by(Choice.timestamp)
         .all()
     )
+
     choices2_data = [
         {
             "timestamp": choice.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             "choice": choice.choice,
-            "question": choice.question,
+            "question": choice.question.text,
+            "theme": choice.question.theme,
         }
         for choice in choices2
     ]
@@ -253,9 +364,21 @@ def get_client_choices(client_id):
 @app.route("/admin_dashboard/")
 @login_required
 def serve_admin_dashboard():
-    clients = Client.query.filter_by(psycho_id=current_user.get_id()).all()
+    clients = Client.query.filter_by(user_id=current_user.get_id()).all()
+    clients_with_sessions = []
+    for client in clients:
+        session = client.active_session
+        clients_with_sessions.append(
+            {
+                "client": client,
+                "active_session": session,
+            }
+        )
+
     return render_template(
-        "admin_dashboard.html", clients=clients, psycho_id=current_user.get_id()
+        "admin_dashboard.html",
+        clients=clients_with_sessions,
+        psycho_id=current_user.get_id(),
     )
 
 

@@ -8,28 +8,6 @@ body {
     font-family: Arial, sans-serif;
 }
 
-.container {
-    text-align: center;
-    background-color: #fff;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 800px;
-    margin-bottom: 20px;
-    overflow-y: auto;
-    max-height: 80vh;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #ccc;
-}
-
 .username {
     margin: 0;
     font-weight: bold;
@@ -92,12 +70,6 @@ body {
     transform: scale(1.05);
 }
 
-@media (max-width: 600px) {
-    .container {
-        padding: 20px;
-    }
-}
-
 table {
     border-collapse: collapse;
     width: 100%;
@@ -127,16 +99,30 @@ tr:hover {
     background-color: #e9e9e9;
 }
 
+
 .action-button {
     display: inline-block;
-    width: 150px;
     text-align: center;
-    padding: 10px;
-    box-sizing: border-box;
+    padding: 10px 20px; /* Adjust padding as needed */
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 100px; /* Adjust as needed */
+    max-width: 200px; /* Adjust as needed */
+    width: auto; /* Let the button size adjust based on content */
+    margin: 0 5px; /* Adjust spacing between buttons */
+    vertical-align: middle; /* Align buttons vertically */
 }
+
 .view-history,
-.share-icon {
+.share-icon,
+.start-session,
+.finish-session {
     padding: 8px 16px;
     color: white;
     border: none;
@@ -147,11 +133,19 @@ tr:hover {
     cursor: pointer;
     display: inline-block;
     margin-right: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 100px; /* Adjust as needed */
+    max-width: 200px; /* Adjust as needed */
+    width: auto; /* Let the button size adjust based on content */
 }
 
 .action-button:hover,
 .view-history:hover,
-.share-icon:hover {
+.share-icon:hover,
+.start-session:hover,
+.finish-session:hover {
     transform: scale(1.05);
 }
 
@@ -177,6 +171,23 @@ tr:hover {
     margin-right: 5px;
 }
 
+.start-session {
+    background-color: #17a2b8;
+}
+
+.start-session:hover {
+    background-color: #138496;
+}
+
+.finish-session {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.finish-session:hover {
+    background-color: #e0a800;
+}
+
 .fa-eye::before {
     content: "\f06e";
 }
@@ -184,6 +195,7 @@ tr:hover {
 .fa-share::before {
     content: "\f1e0";
 }
+
 .username-box {
     background-color: #efe6d4;
     color: black;
@@ -195,7 +207,6 @@ tr:hover {
 .username {
     margin: 0;
 }
-
 
 .disabled {
     pointer-events: none;
@@ -209,8 +220,8 @@ tr:hover {
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 800px;
-    margin-bottom: 20px;
+    /* max-width: 600px; */
+    margin: 0 auto; /* Center align the container */
 }
 
 .header {
@@ -277,6 +288,18 @@ tr:hover {
 .back-link:hover {
     background-color: #0056b3;
 }
+
 .logs-container {
     display: none;
+}
+.disabled-button {
+    background-color: #e0e0e0; /* Light gray background */
+    color: #9e9e9e; /* Gray text color */
+    cursor: not-allowed; /* Indicate non-clickable */
+    text-decoration: none;
+    pointer-events: none; /* Disable interactions */
+    padding: 8px 16px; /* Ensure consistent padding */
+    border-radius: 5px; /* Rounded corners for uniformity */
+    display: inline-block; /* Display as a block element */
+    margin-bottom: 10px; /* Add margin if needed */
 }

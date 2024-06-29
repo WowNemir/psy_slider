@@ -34,3 +34,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_column('choice', 'session_id')
     op.drop_table('session')
+    

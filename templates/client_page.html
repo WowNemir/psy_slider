@@ -9,29 +9,14 @@
 <body>
     <h1>Здравствуйте, {{ client.name }}</h1>
 
-    <form id="questionForm" action="{{ url_for('serve_client_page', client_id=client.id, psycho_id=psycho_id) }}" method="post">
-        <div id="firstSet">
-            {% for key, question in questions1.items() %}
-                <label for="{{ key }}">{{ question }}</label>
-                <input type="range" name="{{ key }}" id="{{ key }}" min="0" max="100" value="50" step="1" style="width: 100%;">
-            {% endfor %}
-            <button type="button" onclick="showSecondSet()">Next</button>
-        </div>
-
+    <form id="questionForm" action="{{ url_for('serve_client_page', share_uid=session.share_uid) }}?type={{ questions_type }}" method="post">
         <div id="secondSet" class="hidden">
-            {% for key, question in questions2.items() %}
-                <label for="{{ key }}">{{ question }}</label>
-                <input type="range" name="{{ key }}" id="{{ key }}" min="0" max="100" value="50" step="1" style="width: 100%;">
+            {% for question in questions %}
+                <label for="{{ question.id }}">{{ question.question }}</label>
+                <input type="range" name="{{ question.id }}" id="{{ question.id }}" min="0" max="100" value="50" step="1" style="width: 100%;">
             {% endfor %}
             <button type="submit">Отправить</button>
         </div>
     </form>
-
-    <script>
-        function showSecondSet() {
-            document.getElementById('firstSet').classList.add('hidden');
-            document.getElementById('secondSet').classList.remove('hidden');
-        }
-    </script>
 </body>
 </html>
