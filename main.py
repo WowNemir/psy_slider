@@ -14,7 +14,6 @@ from sqlalchemy.orm import joinedload
 from flask_config import Development, Production
 from db import db, User, Client, Session, SessionStatus, Choice, Question
 
-
 def create_app(config):
     app = Flask(__name__, template_folder="templates", static_folder="static/css")
     app.secret_key = os.getenv("FLASK_SECRET_KEY", default="default_secret_key_here")
