@@ -13,8 +13,6 @@ import os
 from sqlalchemy.orm import joinedload
 from flask_config import Development, Production
 from db import db, User, Client, Session, SessionStatus, Choice, Question
-from dotenv import load_dotenv
-load_dotenv()
 
 
 def create_app(config):
@@ -301,5 +299,9 @@ if __name__ == "__main__":
     'development': Development,
     'produuction': Production,
     }
+    if not os.getenv("Environment"):
+        from dotenv import load_dotenv
+        load_dotenv()
+
     app = create_app(configs.get(os.getenv("Environment"), Development))
     app.run()
