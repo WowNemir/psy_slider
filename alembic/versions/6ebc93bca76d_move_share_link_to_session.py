@@ -21,12 +21,9 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     with op.batch_alter_table('choice', schema=None) as batch_op:
         batch_op.drop_column('share_link')
-    with op.batch_alter_table('client', schema=None) as batch_op:
-        batch_op.drop_column('session_id')
     op.add_column('session', sa.Column('share_uid', sa.String(length=50), nullable=True))
 
 def downgrade() -> None:
     with op.batch_alter_table('session', schema=None) as batch_op:
         batch_op.drop_column('share_uid')
-    op.add_column('client', sa.Column('session_id', sa.INTEGER(), nullable=True))
     op.add_column('choice', sa.Column('share_link', sa.VARCHAR(), nullable=True))
