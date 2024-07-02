@@ -10,10 +10,10 @@ class TestConfig:
 
 class Development:
     cwd = pathlib.Path.cwd()
-    SQLALCHEMY_DATABASE_URI = "sqlite:///" + str(cwd / "instance" / "site.db")
+    SQLALCHEMY_DATABASE_URI = "sqlite:///" + str(cwd / 'backend' / "instance" / "site.db")
     DEBUG = True
 
 
 class Production:
     cwd = pathlib.Path.cwd() / "psy_slider"
-    SQLALCHEMY_DATABASE_URI = "sqlite:///" + str(cwd / "instance" / "site.db")
+    SQLALCHEMY_DATABASE_URI = "sqlite:///" + str(cwd / 'backend' / "instance" / "site.db")
