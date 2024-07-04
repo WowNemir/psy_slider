@@ -13,14 +13,16 @@ import os
 from sqlalchemy.orm import joinedload
 from flask_config import Development, Production
 from db import db, User, Client, Session, SessionStatus, Choice, Question
+from flask_cors import CORS
 
 def create_app(config):
-    app = Flask(__name__, template_folder="templates", static_folder="static/css")
+    app = Flask(__name__, static_folder='../frontend/build', static_url_path='', template_folder='templates')
     app.secret_key = os.getenv("FLASK_SECRET_KEY", default="default_secret_key_here")
     app.config.from_object(config)
     login_manager = LoginManager(app)
     login_manager.login_view = "login"
     db.init_app(app)
+    CORS(app)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -35,9 +37,9 @@ def create_app(config):
         return bcrypt.gensalt().decode("utf-8")
 
 
-    @app.route("/")
-    def serve_main_page():
-        return render_template("main_page.html")
+    @app.route('/')
+    def index():
+        return app.send_static_file('index.html')
 
 
     @app.route("/login", methods=["GET"])

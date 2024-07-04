@@ -1,14 +1,17 @@
-// src/App.tsx
 import React from 'react';
-import AuthForms from './components/AuthForms';
-import './App.css'; // Add your global styles if necessary
+import ReactDOM from 'react-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import AuthForms from '.components/AuthForms';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
 
-const App: React.FC = () => {
-  return (
-    <div className="App">
-      <AuthForms />
-    </div>
-  );
-};
-
-export default App;
+ReactDOM.render(
+  <Router>
+    <Switch>
+      <Route exact path="/" component={AuthForms} />
+      <Route path="/login" component={LoginForm} />
+      <Route path="/register" component={RegisterForm} />
+    </Switch>
+  </Router>,
+  document.getElementById('root')
+);
