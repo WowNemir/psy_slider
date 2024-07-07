@@ -13,16 +13,16 @@
   ],
   "components": {
     "securitySchemes": {
-      "sessionCookie": {
-        "type": "apiKey",
-        "in": "cookie",
-        "name": "session"
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },
   "security": [
     {
-      "sessionCookie": []
+      "bearerAuth": []
     }
   ],
   "paths": {

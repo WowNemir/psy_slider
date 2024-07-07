@@ -1,12 +1,12 @@
+import bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
 from datetime import datetime
 import enum
 import uuid
 
 db = SQLAlchemy()
 
-class User(db.Model, UserMixin):
+class User(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     role = db.Column(db.String(10))
     username = db.Column(db.String(255))
@@ -15,6 +15,8 @@ class User(db.Model, UserMixin):
     clients = db.relationship("Client", backref="user", lazy=True)
     choices = db.relationship("Choice", backref="user", lazy=True)
 
+    def check_password(self, password):
+        return bcrypt.checkpw(password.encode("utf-8"), self.password.encode("utf-8"))
 
 class SessionStatus(enum.Enum):
     STARTED = "started"

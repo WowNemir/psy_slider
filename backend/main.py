@@ -2,34 +2,23 @@ import uuid
 from flask import Blueprint, Flask, render_template, request, redirect, url_for
 import bcrypt
 from flask import jsonify
-from flask_login import (
-    LoginManager,
-    login_user,
-    logout_user,
-    login_required,
-    current_user,
-)
 import os
 from sqlalchemy.orm import joinedload
 from flask_config import Development, Production
 from db import db, User, Client, Session, SessionStatus, Choice, Question
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, current_user, jwt_required
 
 def create_app(config):
     app = Flask(__name__, static_folder='../frontend/build', static_url_path='', template_folder='templates')
     app.secret_key = os.getenv("FLASK_SECRET_KEY", default="default_secret_key_here")
     app.config.from_object(config)
-    login_manager = LoginManager(app)
-    login_manager.login_view = "/api/v1/login"
     db.init_app(app)
-
     CORS(app)
+    jwt = JWTManager(app)
+
     swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
     app.register_blueprint(swagger_blu)
-
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(user_id)
 
 
     def calculate_hash(password, salt):
@@ -38,7 +27,15 @@ def create_app(config):
 
     def generate_salt():
         return bcrypt.gensalt().decode("utf-8")
+    
+    @jwt.user_identity_loader
+    def user_identity_lookup(user):
+        return user.id
 
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        identity = jwt_data["sub"]
+        return User.query.filter_by(id=identity).one_or_none()
 
     @app.route('/')
     def index():
@@ -76,19 +73,18 @@ def create_app(config):
         username = request.form["username"]
         password = request.form["password"]
 
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).one_or_none()
+        if not user or not user.check_password(password):
+            return jsonify("Wrong username or password"), 401
 
-        if user:
-            if bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
+        access_token = create_access_token(identity=user)
+        return jsonify(access_token=access_token)
 
-                login_user(user)
-                return jsonify(success=True)
-
-        return jsonify(message="Invalid username or password"), 400        
-
-    @app.route("/api/v1/client", methods=["POST"])
-    @login_required
+    @app.route("/api/v1/clients", methods=["POST"])
+    
+    @jwt_required()
     def add_client():
+        print(current_user.username)
         name = request.form.get("name")
         new_client = Client(id=uuid.uuid1().hex, name=name, user_id=current_user.id)
         db.session.add(new_client)
@@ -150,7 +146,6 @@ def create_app(config):
 
 
     @app.route("/api/start_session/<client_id>", methods=["POST"])
-    @login_required
     def start_session(client_id):
         client = Client.query.get(client_id)
         if client:
@@ -173,7 +168,6 @@ def create_app(config):
 
 
     @app.route("/api/finish_session/<client_id>", methods=["POST"])
-    @login_required
     def finish_session(client_id):
         session = Client.query.get(client_id).active_session
 
@@ -203,14 +197,12 @@ def create_app(config):
 
 
     @app.route("/api/set_has_unfinished_choices/<client_id>", methods=["POST"])
-    @login_required
     def api_set_has_unfinished_choices(client_id):
         set_has_unfinished_choices(client_id)
         return jsonify({"status": "success"})
 
 
     @app.route("/api/choices/<client_id>")
-    @login_required
     def get_client_choices(client_id):
         choices1 = (
             Choice.query.filter(
@@ -253,7 +245,6 @@ def create_app(config):
 
 
     @app.route("/admin_dashboard/")
-    @login_required
     def serve_admin_dashboard():
         clients = Client.query.filter_by(user_id=current_user.get_id()).all()
         clients_with_sessions = []
@@ -274,7 +265,6 @@ def create_app(config):
 
 
     @app.route("/client_history/<client_id>")
-    @login_required
     def serve_client_history(client_id):
         client = Client.query.get(client_id)
         choices = Choice.query.filter_by(client_id=client_id).order_by("timestamp").all()
@@ -282,9 +272,8 @@ def create_app(config):
 
 
     @app.route("/api/v1/auth/logout", methods=["POST"])
-    @login_required
     def logout():
-        logout_user()
+
         return jsonify(success=True)
     
     @app.route('/api/docs')
