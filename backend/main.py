@@ -1,5 +1,5 @@
 import uuid
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Blueprint, Flask, render_template, request, redirect, url_for
 import bcrypt
 from flask import jsonify
 from flask_login import (
@@ -20,9 +20,12 @@ def create_app(config):
     app.secret_key = os.getenv("FLASK_SECRET_KEY", default="default_secret_key_here")
     app.config.from_object(config)
     login_manager = LoginManager(app)
-    login_manager.login_view = "login"
+    login_manager.login_view = "/api/v1/login"
     db.init_app(app)
+
     CORS(app)
+    swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
+    app.register_blueprint(swagger_blu)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -41,41 +44,34 @@ def create_app(config):
     def index():
         return app.send_static_file('index.html')
 
+    @app.route("/api/v1/auth/register", methods=["POST",])
+    def register():
+        username = request.form["username"]
+        password = request.form["password"]
+        
+        def is_password_valid(password):
+            return True
+        
+        existing_user = User.query.filter_by(username=username).first()
+        
+        if existing_user:
+            return jsonify(message="Username already exists. Please choose a different one."), 400
+        
+        if not is_password_valid(password):
+            return jsonify(message="Password is not valid"), 400
+        
+        salt = generate_salt()
+        hashed_password = calculate_hash(password, salt)
 
-    @app.route("/login", methods=["GET"])
-    def serve_login_page():
-        return render_template("login_page.html")
+        new_user = User(
+            id=uuid.uuid1().hex, username=username, password=hashed_password, salt=salt
+        )
+        db.session.add(new_user)
+        db.session.commit()
 
+        return jsonify(success=True)
 
-    @app.route("/register", methods=["GET", "POST"])
-    def serve_register_page():
-        if request.method == 'POST':
-            new_username = request.form["new_username"]
-            new_password = request.form["new_password"]
-            confirm_password = request.form["confirm_password"]
-
-            existing_user = User.query.filter_by(username=new_username).first()
-            if existing_user:
-                return "Username already exists. Please choose a different one."
-
-            if new_password != confirm_password:
-                return "Passwords do not match."
-
-            salt = generate_salt()
-            hashed_password = calculate_hash(new_password, salt)
-
-            new_user = User(
-                id=uuid.uuid1().hex, username=new_username, password=hashed_password, salt=salt
-            )
-            db.session.add(new_user)
-            db.session.commit()
-
-            return redirect(url_for("serve_main_page"))
-
-        return render_template("register_page.html")
-
-
-    @app.route("/login", methods=["POST"])
+    @app.route("/api/v1/auth/login", methods=["POST"])
     def login():
         username = request.form["username"]
         password = request.form["password"]
@@ -86,21 +82,18 @@ def create_app(config):
             if bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
 
                 login_user(user)
-                return redirect(url_for("serve_admin_dashboard"))
+                return jsonify(success=True)
 
-        return "Invalid username or password"
-        
+        return jsonify(message="Invalid username or password"), 400        
 
-    @app.route("/add_client", methods=["GET", "POST"])
+    @app.route("/api/v1/client", methods=["POST"])
     @login_required
     def add_client():
-        if request.method == "POST":
-            name = request.form.get("name")
-            new_client = Client(id=uuid.uuid1().hex, name=name, user_id=current_user.id)
-            db.session.add(new_client)
-            db.session.commit()
-            return redirect(url_for("serve_admin_dashboard"))
-        return render_template("add_client.html", user_id=current_user.get_id())
+        name = request.form.get("name")
+        new_client = Client(id=uuid.uuid1().hex, name=name, user_id=current_user.id)
+        db.session.add(new_client)
+        db.session.commit()
+        return jsonify(success=True)
 
 
     @app.route("/client_page/<share_uid>", methods=["POST", "GET"])
@@ -288,12 +281,20 @@ def create_app(config):
         return render_template("client_history.html", client=client, choices=choices)
 
 
-    @app.route("/logout")
+    @app.route("/api/v1/auth/logout", methods=["POST"])
     @login_required
     def logout():
         logout_user()
-        return redirect(url_for("serve_main_page"))
+        return jsonify(success=True)
+    
+    @app.route('/api/docs')
+    def get_docs():
+        print('sending docs')
+        return render_template('swaggerui.html')
+    
     return app
+
+
 
 if __name__ == "__main__":
     configs = {

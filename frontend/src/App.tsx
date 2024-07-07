@@ -1,17 +1,25 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import AuthForms from '.components/AuthForms';
-import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Route, Routes} from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import AdminDashboard from './pages/AdminDashboard';
+import AddClient from './pages/AddClient';
 
-ReactDOM.render(
-  <Router>
-    <Switch>
-      <Route exact path="/" component={AuthForms} />
-      <Route path="/login" component={LoginForm} />
-      <Route path="/register" component={RegisterForm} />
-    </Switch>
-  </Router>,
-  document.getElementById('root')
-);
+
+function App() {
+  return ( 
+  <>
+  <Routes>
+    <Route path="/" element={<Home />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/register" element={<Register />} />
+    <Route path="/admin-dashboard" element={<AdminDashboard />} />
+    <Route path="/add-client" element={<AddClient />} />
+  </Routes>
+  </>
+  );
+}
+
+export default App;
