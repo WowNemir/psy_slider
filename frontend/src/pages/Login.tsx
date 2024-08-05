@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -22,78 +23,82 @@ const Login = () => {
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch("/api/v1/auth/login", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await axios.post("/api/v1/auth/login", formData);
+      const token = response.data.access_token;
 
-    if (response.ok) {
-        navigate("/admin-dashboard");
-      } else {
-        alert("Login failed. Please try again.");
-      }
+      localStorage.setItem("token", token);
+      // axios.interceptors.request.use(
+      //   config => {
+      //     config.headers['Authorization'] = `Bearer ${token}`;
+      //         return config;
+      //     },
+      //     error => {
+      //         return Promise.reject(error);
+      //     }
+      // );
+      navigate("/admin-dashboard");
+    } catch (error) {
+      alert("Login failed. Please try again.");
+    }
   };
 
   return (
-    <>
-      <Container maxWidth="xs">
-        <CssBaseline />
-        <Box
-          sx={{
-            mt: 20,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Avatar sx={{ m: 1, bgcolor: "primary.light" }}>
-            <LockOutlined />
-          </Avatar>
-          <Typography variant="h5">Login</Typography>
-          <Box sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+    <Container maxWidth="xs">
+      <CssBaseline />
+      <Box
+        sx={{
+          mt: 20,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Avatar sx={{ m: 1, bgcolor: "primary.light" }}>
+          <LockOutlined />
+        </Avatar>
+        <Typography variant="h5">Login</Typography>
+        <Box sx={{ mt: 1 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="password"
-              name="password"
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-              }}
-            />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="password"
+            name="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
 
-            <Button
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              onClick={handleLogin}
-            >
-              Login
-            </Button>
-            <Grid container justifyContent={"flex-end"}>
-              <Grid item>
-                <Link to="/register">Don't have an account? Register</Link>
-              </Grid>
+          <Button
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            onClick={handleLogin}
+          >
+            Login
+          </Button>
+          <Grid container justifyContent={"flex-end"}>
+            <Grid item>
+              <Link to="/register">Don't have an account? Register</Link>
             </Grid>
-          </Box>
+          </Grid>
         </Box>
-      </Container>
-    </>
+      </Box>
+    </Container>
   );
 };
 

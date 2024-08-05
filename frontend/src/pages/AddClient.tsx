@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -13,36 +13,29 @@ import {
   IconButton,
 } from '@mui/material';
 import { Home, LockOutlined } from '@mui/icons-material';
+import axios from "axios";
 
 const AddClient: React.FC = () => {
   const navigate = useNavigate();
   const [name, setName] = useState<string>('');
-  const [psychoId, setPsychoId] = useState<string>(''); // Placeholder, replace with actual value
-
-  useEffect(() => {
-    // Fetch psychoId here if needed and set it using setPsychoId
-  }, []);
 
   const handleAddClient = async (event: React.FormEvent) => {
     event.preventDefault();
-
     const formData = new FormData();
     formData.append('name', name);
-    formData.append('psycho_id', psychoId);
-
-    const response = await fetch(`/add_client/${psychoId}`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (response.ok) {
-      alert('Client added successfully!');
-      navigate('/admin-dashboard');
-    } else {
-      alert('Failed to add client. Please try again.');
-    }
+    
+    const response = await axios.post(
+      'api/v1/clients',
+      formData,
+      {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    navigate('/admin-dashboard');
   };
-
   const handleHome = () => {
     navigate('/admin-dashboard');
   };
@@ -94,7 +87,6 @@ const AddClient: React.FC = () => {
             onChange={(e) => setName(e.target.value)}
             placeholder="Введите имя клиента"
           />
-          <input type="hidden" name="psycho_id" value={psychoId} />
           <Button
             type="submit"
             fullWidth

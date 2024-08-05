@@ -1,45 +1,75 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Avatar } from '@mui/material';
+import {
+  Container, Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Paper, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, IconButton
+} from '@mui/material';
 import { LockOutlined } from "@mui/icons-material";
-import '../components/AdminDashboard.css'; // Ensure you have corresponding CSS
-
-interface Client {
-  id: string;
-  name: string;
-  activeSession: boolean;
-}
+import { fetchClients, logout, handleSession, deleteClient } from '../api/client';
+import { Client } from '../types/index';
 
 const AdminDashboard: React.FC = () => {
-  const navigate = useNavigate(); // Get the navigate function from react-router-dom
+  const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
-  const [username, setUsername] = useState<string>('Admin');
+  const [deleteClientId, setDeleteClientId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
+
+  const getClients = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const clients = await fetchClients();
+      setClients(clients);
+    } catch (error) {
+      console.error('Failed to fetch clients', error);
+      setError('Failed to fetch clients.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch clients and user info here
-    // setClients(data.clients);
-    // setUsername(data.username);
+    getClients();
   }, []);
 
-  const handleLogout = () => {
-    // Handle logout logic
+  const handleLogout = async () => {
+    try {
+      await logout();
+      localStorage.removeItem('token');
+    } catch (error) {
+      console.error('Failed to logout', error);
+    }
     navigate('/login');
   };
 
-  const handleAddClient = () => {
-    navigate("/add-client"); // Navigate to the add-client route
+  const handleSessionButtonClick = async (client: Client, sessionId: string | null) => {
+    console.log('loggin client info')
+    console.log(client)
+    try {
+      await handleSession(client.id, sessionId);
+      await getClients();
+    } catch (error) {
+      console.error(`Failed to ${sessionId ? 'finish' : 'start'} session`, error);
+    }
   };
 
-  const copyToClipboard = (clientPageUrl: string, clientId: string, button: HTMLButtonElement) => {
-    // Copy to clipboard logic
+  const deleteSelectedClient = async () => {
+    if (!deleteClientId) return;
+    try {
+      await deleteClient(deleteClientId);
+      setClients(clients.filter(client => client.id !== deleteClientId));
+      setDeleteClientId(null);
+    } catch (error) {
+      console.error(`Failed to delete client with ID ${deleteClientId}`, error);
+      alert('Failed to delete client. Please try again.');
+    }
   };
-
-  const startSession = (clientId: string, button: HTMLButtonElement) => {
-    // Start session logic
-  };
-
-  const finishSession = (clientId: string, button: HTMLButtonElement) => {
-    // Finish session logic
+  const handleCopyClientPage = (client: Client, type: string) => {
+    const url = `${window.location.origin}/client-page/${client.activeSession?.share_uid}?type=${type}`;
+    navigator.clipboard.writeText(url);
+    setOpenSnackbar(true);
   };
 
   return (
@@ -49,82 +79,86 @@ const AdminDashboard: React.FC = () => {
           <Avatar sx={{ bgcolor: 'primary.main' }}>
             <LockOutlined />
           </Avatar>
-          <Typography variant="h6" sx={{ ml: 2 }}>{username}</Typography>
+          <Typography variant="h6" sx={{ ml: 2 }}>Admin</Typography>
         </Box>
-        <Button variant="contained" onClick={handleLogout}>
-          Logout
-        </Button>
+        <Button variant="contained" onClick={handleLogout}>Logout</Button>
       </Box>
       <Box sx={{ my: 4 }}>
         <Typography variant="h4" gutterBottom>Клиенты:</Typography>
-        <Button variant="contained" onClick={handleAddClient} sx={{ mb: 2 }}>
-          Добавить клиента
-        </Button>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Имя</TableCell>
-                <TableCell>Графики</TableCell>
-                <TableCell>Ссылка с ползунком</TableCell>
-                <TableCell>Действия</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {clients.map(client => (
-                <TableRow key={client.id}>
-                  <TableCell>{client.name}</TableCell>
-                  <TableCell>
-                    <Button href={`/client-history/${client.id}`} variant="outlined">
-                      Посмотреть
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    {client.activeSession ? (
-                      <>
-                        <Button
-                          onClick={(e) => copyToClipboard(`/client-page/${client.id}?type=pre`, client.id, e.currentTarget as HTMLButtonElement)}
-                          variant="outlined"
-                        >
-                          До сессии
-                        </Button>
-                        <Button
-                          onClick={(e) => copyToClipboard(`/client-page/${client.id}?type=post`, client.id, e.currentTarget as HTMLButtonElement)}
-                          variant="outlined"
-                        >
-                          После сессии
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button disabled variant="outlined">До сессии</Button>
-                        <Button disabled variant="outlined">После сессии</Button>
-                      </>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {client.activeSession ? (
-                      <Button
-                        onClick={(e) => finishSession(client.id, e.currentTarget as HTMLButtonElement)}
-                        variant="outlined"
-                      >
-                        Завершить сессию
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={(e) => startSession(client.id, e.currentTarget as HTMLButtonElement)}
-                        variant="outlined"
-                      >
-                        Начать сессию
-                      </Button>
-                    )}
-                  </TableCell>
+        <Button variant="contained" onClick={() => navigate("/add-client")} sx={{ mb: 2 }}>Добавить клиента</Button>
+        {loading && <Typography>Loading...</Typography>}
+        {error && <Typography color="error">{error}</Typography>}
+        {!loading && !error && (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Имя</TableCell>
+                  <TableCell>Графики</TableCell>
+                  <TableCell>Ссылка для клиента</TableCell>
+                  <TableCell>Действия</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {clients.length > 0 ? clients.map(client => (
+                  <TableRow key={client.id}>
+                    <TableCell>{client.name}</TableCell>
+                    <TableCell><Button href={`/client-history/${client.id}`} variant="outlined">Посмотреть</Button></TableCell>
+                    <TableCell>
+                      {['pre', 'post'].map(type => (
+                        <Button
+                          key={type}
+                          onClick={() => handleCopyClientPage(client, type)}
+                          variant="outlined"
+                          disabled={!client.activeSession}
+                        >
+                          {type === 'pre' ? 'До сессии' : 'После сессии'}
+                        </Button>
+                      ))}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => handleSessionButtonClick(client, client.activeSession?.id || null)}
+                        variant="outlined"
+                      >
+                        {client.activeSession ? 'Завершить сессию' : 'Начать сессию'}
+                      </Button>
+                      <Button
+                        onClick={() => setDeleteClientId(client.id)}
+                        variant="outlined"
+                        sx={{ ml: 1, color: 'error.main', borderColor: 'error.main' }}
+                      >
+                        Удалить клиента
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">Нет клиентов</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Box>
+      <Dialog open={!!deleteClientId} onClose={() => setDeleteClientId(null)}>
+        <DialogTitle>Подтверждение удаления</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">Вы уверены, что хотите удалить этого клиента?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteClientId(null)} color="primary">Отмена</Button>
+          <Button onClick={deleteSelectedClient} color="error" variant="contained">Удалить</Button>
+        </DialogActions>
+      </Dialog>
+      <Snackbar
+        message="Copied to clipboard"
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        autoHideDuration={2000}
+        onClose={() => setOpenSnackbar(false)}
+        open={openSnackbar}
+      />
     </Container>
   );
 };

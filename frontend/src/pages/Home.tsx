@@ -1,9 +1,16 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Home = () => {
-    return (
-        <div>Home</div>
-    )
-}
+    const navigate = useNavigate();
 
-export default Home
+    return (
+        <div>
+            <button onClick={() => navigate('/login')}>Login</button>
+            <button onClick={() => navigate('/register')}>Register</button>
+        </div>
+    );
+};
+
+export default Home;

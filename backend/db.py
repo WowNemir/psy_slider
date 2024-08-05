@@ -1,8 +1,11 @@
+from marshmallow import fields
 import bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import enum
 import uuid
+
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
 db = SQLAlchemy()
 
@@ -22,7 +25,6 @@ class SessionStatus(enum.Enum):
     STARTED = "started"
     FINISHED = "finished"
     CANCELED = "canceled"
-
 
 class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -47,7 +49,6 @@ class Session(db.Model):
     def active_choices(self):
         return Choice.query.filter_by(session_id=self.id).all()
 
-
 class Choice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, default=datetime.now)
@@ -60,7 +61,6 @@ class Choice(db.Model):
     @property
     def session_info(self):
         return Session.query.filter_by(id=self.session_id).first()
-
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -77,12 +77,11 @@ class Question(db.Model):
     def post_session_questions(self):
         return Question.query.filter_by(type="after_session").all()
 
-
 class Client(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     name = db.Column(db.String(255))
     user_id = db.Column(db.String(50), db.ForeignKey("user.id"), nullable=False)
-    has_unfinished_choices = db.Column(db.Boolean, default=False)
+    deleted = db.Column(db.Boolean, default=False)
     choices = db.relationship("Choice", backref="client", lazy=True)
 
     @property
@@ -95,3 +94,38 @@ class Client(db.Model):
     @property
     def client_choices(self):
         return Choice.query.filter_by(client_id=self.id).all()
+
+class SessionSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Session
+        load_instance = True
+
+    id = fields.String()
+    pre_session_completed = fields.Boolean()
+    post_session_completed = fields.Boolean()
+    status = fields.String()
+
+class ClientSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Client
+        load_instance = True
+
+    id = fields.String()
+    name = fields.String()
+    active_session = fields.Nested(SessionSchema, many=False, dump_only=True)
+
+class ChoiceSchema(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Choice
+        load_instance = True
+
+    id = fields.Integer()
+    timestamp = fields.DateTime()
+    choice = fields.Integer()
+    client_id = fields.String()
+    user_id = fields.String()
+    session_id = fields.Integer()
+    question_id = fields.Integer()
+
+client_schema = ClientSchema(many=True)
+choice_schema = ChoiceSchema(many=True)
