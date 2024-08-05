@@ -1,12 +1,14 @@
+import sys
+import os
 import uuid
 from flask import Blueprint, Flask, render_template, request, redirect, send_from_directory, url_for, jsonify
 import bcrypt
-import os
 from sqlalchemy.orm import joinedload
-from flask_config import Development, Production
 from db import db, User, Client, Session, SessionStatus, Choice, Question, client_schema, choice_schema
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, current_user, jwt_required
+from flask_config import Development, Production
+
 
 def create_app(config):
     app = Flask(__name__, static_folder='../frontend/build', static_url_path='', template_folder='templates')
