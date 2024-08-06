@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Client, Choice } from '../types';
 
 const API_URL = '/api/v1';
@@ -60,4 +60,20 @@ export const deleteClient = async (clientId: string): Promise<void> => {
 export const fetchQuestions = async (queryType: string): Promise<any[]> => {
   const response = await axios.get<any[]>(`${API_URL}/questions/${queryType}`, getAuthHeaders());
   return response.data;
+};
+
+export const fetchVoteDone = async (shareUid?: string, queryType?: string): Promise<any[]> => {
+    const response = await axios.get<any[]>(`${API_URL}/vote/${shareUid}?${queryType}`);
+    return response.data;
+  };
+  
+
+export const handleVoteSubmition = async (shareUid: string | undefined, queryType: string | null, formValues: Record<string, number>): Promise<AxiosResponse<any, any>> => {
+    const formData = new FormData();
+        for (const [question_id, value] of Object.entries(formValues)) {
+            formData.append(question_id, value.toString());
+        }
+
+        const response = await axios.post(`${API_URL}/vote/${shareUid}?${queryType}`, formData);
+    return response
 };

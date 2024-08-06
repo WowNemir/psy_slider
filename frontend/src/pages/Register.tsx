@@ -27,7 +27,7 @@ import {
         formData.append("new_username", name);
         formData.append("new_password", password);
     
-        const response = await fetch("/register", {
+        const response = await fetch("api/v1/auth/register", {
           method: "POST",
           body: formData,
         });

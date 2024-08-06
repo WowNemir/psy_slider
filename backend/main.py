@@ -19,9 +19,9 @@ def create_app(config):
     CORS(app)
     jwt = JWTManager(app)
 
-    if config == Development:
-        swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
-        app.register_blueprint(swagger_blu)
+    # if config == Development:
+    #     swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
+    #     app.register_blueprint(swagger_blu)
     
     def calculate_hash(password, salt):
         return bcrypt.hashpw(password.encode("utf-8"), salt.encode("utf-8")).decode("utf-8")
@@ -38,16 +38,15 @@ def create_app(config):
         identity = jwt_data["sub"]
         return User.query.filter_by(id=identity).one_or_none()
 
-
     @app.route('/')
     def index():
         return app.send_static_file('index.html')
 
-
+    # Your existing API routes
     @app.route("/api/v1/auth/register", methods=["POST"])
     def register():
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form["new_username"]
+        password = request.form["new_password"]
 
         def is_password_valid(password):
             return True
@@ -124,7 +123,7 @@ def create_app(config):
         choices_post = Choice.query.filter(Choice.client_id == client.id, Choice.question_id.in_(post_session_questions_ids)).all()
         return jsonify(choice_schema.dump(choices_pre), choice_schema.dump(choices_post))
 
-    @app.route("/client-page/<share_uid>", methods=["POST", "GET"])
+    @app.route("/api/v1/vote/<share_uid>", methods=["POST", "GET"])
     def get_choice_results(share_uid):
         session = Session.query.filter_by(share_uid=share_uid).one_or_404()
             
@@ -133,11 +132,10 @@ def create_app(config):
         type_ = request.args.get('type')
         if request.method == "GET":
             if type_ == 'pre' and session.pre_session_completed:
-                return jsonify(completed=True)
+                return jsonify(True)
             elif type_ == 'post' and session.post_session_completed:
-                return jsonify(completed=True)
-            return jsonify(completed=False)
-        print(list(request.form.items()))
+                return jsonify(True)
+            return jsonify(False)
         for question_id, value in request.form.items():
             new_choice = Choice(
                     choice=value,
@@ -229,11 +227,6 @@ def create_app(config):
     @jwt_required()
     def logout():
         return jsonify(success=True)
-
-
-    @app.route('/api/docs')
-    def get_docs():
-        return render_template('swaggerui.html')
     
     @app.route("/api/v1/questions/<questions_type>", methods=["GET"])
     def get_questions(questions_type):
@@ -245,12 +238,10 @@ def create_app(config):
             return jsonify({"status": "error", "message": "Invalid question type"}), 400
         questions = [{"id": q.id, "text": q.text} for q in questions]
         return jsonify(questions)
-    # @app.before_request
-    # def print_routes():
-        # for rule in app.url_map.iter_rules():
-            # print(f"Endpoint: {rule.endpoint}, Rule: {rule}, Methods: {rule.methods}")
-
-
+    
+    @app.errorhandler(404)   
+    def not_found(e):   
+        return app.send_static_file('index.html')
     return app
 
 if __name__ == "__main__":

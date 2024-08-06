@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Container, Typography, Slider, Button, Box, FormControl, FormLabel } from '@mui/material';
-import { fetchQuestions } from '../api/client';
+import { fetchVoteDone, fetchQuestions, handleVoteSubmition } from '../api/client';
 interface Question {
     id: string;
     text: string;
@@ -23,16 +23,11 @@ const ClientPage: React.FC = () => {
     useEffect(() => {
         const checkSubmissionStatus = async () => {
             try {
-                const response = await fetch(`/client-page/${share_uid}?type=${queryType}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.completed) {
-                        navigate('/thank-you');
-                    } else {
-                        setShowSliders(true);
-                    }
+                const done = await fetchVoteDone(share_uid, queryType);
+                if (done) {
+                    navigate('/thank-you');
                 } else {
-                    console.error('Error checking submission status:', response.statusText);
+                    setShowSliders(true);
                 }
             } catch (error) {
                 console.error('Error checking submission status:', error);
@@ -47,7 +42,6 @@ const ClientPage: React.FC = () => {
         if (showSliders) {
             const fetchAndSetQuestions = async () => {
                 try {
-                    // Ensure queryType is a string and does not contain unexpected values
                     const data = await fetchQuestions(queryType.trim());
 
                     if (Array.isArray(data)) {
@@ -83,25 +77,12 @@ const ClientPage: React.FC = () => {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        try {
-            const formData = new FormData();
-            for (const [question_id, value] of Object.entries(formValues)) {
-                formData.append(question_id, value.toString());
-            }
-
-            const response = await fetch(window.location.href, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (response.ok) {
-                console.log('Form submitted successfully');
-                navigate('/thank-you');
-            } else {
-                console.error('Error submitting form:', response.statusText);
-            }
-        } catch (error) {
-            console.error('Error submitting form:', error);
+        const response = await handleVoteSubmition(share_uid, queryType, formValues);
+        if (response.data.success) {
+            console.log('Form submitted successfully');
+            navigate('/thank-you');
+        } else {
+            console.error('Error submitting form:', response.statusText);
         }
     };
 
