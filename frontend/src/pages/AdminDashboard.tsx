@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container, Box, Typography, Button, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, IconButton
+  TableHead, TableRow, Paper, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar
 } from '@mui/material';
 import { LockOutlined } from "@mui/icons-material";
-import { fetchClients, logout, handleSession, deleteClient } from '../api/client';
+import { fetchClients, handleSession, deleteClient } from '../api/client';
 import { Client } from '../types/index';
+import LogoutButton from '../components/LogoutButton'; // Import from components
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -34,16 +35,6 @@ const AdminDashboard: React.FC = () => {
     getClients();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      localStorage.removeItem('token');
-    } catch (error) {
-      console.error('Failed to logout', error);
-    }
-    navigate('/login');
-  };
-
   const handleSessionButtonClick = async (client: Client, sessionId: string | null) => {
     console.log('loggin client info')
     console.log(client)
@@ -66,6 +57,7 @@ const AdminDashboard: React.FC = () => {
       alert('Failed to delete client. Please try again.');
     }
   };
+
   const handleCopyClientPage = (client: Client, type: string) => {
     const url = `${window.location.origin}/client-page/${client.activeSession?.share_uid}?type=${type}`;
     navigator.clipboard.writeText(url);
@@ -81,7 +73,7 @@ const AdminDashboard: React.FC = () => {
           </Avatar>
           <Typography variant="h6" sx={{ ml: 2 }}>Admin</Typography>
         </Box>
-        <Button variant="contained" onClick={handleLogout}>Logout</Button>
+        <LogoutButton />
       </Box>
       <Box sx={{ my: 4 }}>
         <Typography variant="h4" gutterBottom>Клиенты:</Typography>

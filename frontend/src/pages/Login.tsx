@@ -28,15 +28,6 @@ const Login = () => {
       const token = response.data.access_token;
 
       localStorage.setItem("token", token);
-      // axios.interceptors.request.use(
-      //   config => {
-      //     config.headers['Authorization'] = `Bearer ${token}`;
-      //         return config;
-      //     },
-      //     error => {
-      //         return Promise.reject(error);
-      //     }
-      // );
       navigate("/admin-dashboard");
     } catch (error) {
       alert("Login failed. Please try again.");

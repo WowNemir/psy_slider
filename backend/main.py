@@ -19,9 +19,9 @@ def create_app(config):
     CORS(app)
     jwt = JWTManager(app)
 
-    # if config == Development:
-    #     swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
-    #     app.register_blueprint(swagger_blu)
+    if config == Development:
+        swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
+        app.register_blueprint(swagger_blu)
     
     def calculate_hash(password, salt):
         return bcrypt.hashpw(password.encode("utf-8"), salt.encode("utf-8")).decode("utf-8")
@@ -38,11 +38,6 @@ def create_app(config):
         identity = jwt_data["sub"]
         return User.query.filter_by(id=identity).one_or_none()
 
-    @app.route('/')
-    def index():
-        return app.send_static_file('index.html')
-
-    # Your existing API routes
     @app.route("/api/v1/auth/register", methods=["POST"])
     def register():
         username = request.form["new_username"]
@@ -239,9 +234,13 @@ def create_app(config):
         questions = [{"id": q.id, "text": q.text} for q in questions]
         return jsonify(questions)
     
-    @app.errorhandler(404)   
-    def not_found(e):   
-        return app.send_static_file('index.html')
+    if config == Production:
+        # @app.route('/')
+        # def index():
+        #     return app.send_static_file('index.html')
+        @app.errorhandler(404)   
+        def not_found(e):   
+            return app.send_static_file('index.html')
     return app
 
 if __name__ == "__main__":
@@ -252,6 +251,6 @@ if __name__ == "__main__":
     if not os.getenv("Environment"):
         from dotenv import load_dotenv
         load_dotenv()
-
+        
     app = create_app(configs.get(os.getenv("Environment"), Development))
     app.run()

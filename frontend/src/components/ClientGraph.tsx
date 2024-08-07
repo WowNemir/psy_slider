@@ -1,26 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Container, Box, Typography, Button, IconButton, AppBar, Toolbar } from '@mui/material';
-import { Home, Logout } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
-import { useParams, useNavigate } from 'react-router-dom';
-import { fetchClientChoices, logout, fetchQuestions } from '../api/client';
+import { fetchClientChoices, fetchQuestions } from '../api/client';
 import { Choice } from '../types';
-interface Data {
-  choices1: Choice[];
-  choices2: Choice[];
+import { useParams } from 'react-router-dom';
+
+interface GraphComponentProps {
+  type: 'pre' | 'post';
 }
 
-const GraphComponent: React.FC<{ type: 'pre' | 'post' }> = ({ type }) => {
+const GraphComponent: React.FC<GraphComponentProps> = ({ type }) => {
   const [data, setData] = useState<Choice[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<{ [key: string]: string }>({});
+  const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { clientId } = useParams<{ clientId: string }>();
 
   const fetchQuestionsData = async () => {
     try {
-      const questionsData = await fetchQuestions(type === 'pre' ? 'pre' : 'post');
+      const questionType = type === 'pre' ? 'before' : 'after';
+      const questionsData = await fetchQuestions(questionType);
       const questionsMap = questionsData.reduce((acc, item) => {
         acc[item.id] = item.text;
         return acc;
@@ -39,7 +39,7 @@ const GraphComponent: React.FC<{ type: 'pre' | 'post' }> = ({ type }) => {
         const choices = type === 'pre' ? response.choices1 : response.choices2;
         if (choices.length === 0) {
           setData([]);
-          setError(`Нет данных`);
+          setError(`No data available for ${type === 'pre' ? 'before' : 'after'} the session.`);
         } else {
           setData(choices.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
           setError(null);
@@ -55,15 +55,14 @@ const GraphComponent: React.FC<{ type: 'pre' | 'post' }> = ({ type }) => {
 
   useEffect(() => {
     fetchQuestionsData();
-    console.log(questions);
-  }, []);
+  }, [type]);
 
   useEffect(() => {
     fetchData();
-  }, [clientId]);
+  }, [clientId, type]);
 
   useEffect(() => {
-    if (canvasRef.current && data.length > 0) {
+    if (canvasRef.current && data.length > 0 && Object.keys(questions).length > 0) {
       const datasets: { [key: string]: any } = {};
       const colors = [
         'rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)',
@@ -103,7 +102,7 @@ const GraphComponent: React.FC<{ type: 'pre' | 'post' }> = ({ type }) => {
   return (
     <Box sx={{ flex: 1, mb: 4 }}>
       <Typography variant="h6">
-        {type === 'pre' ? 'До сессии' : 'После сессии'}:
+        {type === 'pre' ? 'Before Session' : 'After Session'}:
       </Typography>
       <Box sx={{ mb: 2 }}>
         {error ? <Typography color="error">{error}</Typography> : null}
@@ -115,43 +114,4 @@ const GraphComponent: React.FC<{ type: 'pre' | 'post' }> = ({ type }) => {
   );
 };
 
-const ClientGraphs: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleHome = () => navigate('/admin-dashboard');
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
-
-  return (
-    <Container>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton edge="start" color="inherit" onClick={handleHome}>
-            <Home />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Client Graphs
-          </Typography>
-          <Button color="inherit" onClick={handleLogout}>
-            <Logout /> Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-      <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', height: '80vh' }}>
-        <Typography variant="h4" gutterBottom>
-          Graphs for {/* Client name */}
-        </Typography>
-        <GraphComponent type="pre" />
-        <GraphComponent type="post" />
-      </Box>
-    </Container>
-  );
-};
-
-export default ClientGraphs;
+export default GraphComponent;

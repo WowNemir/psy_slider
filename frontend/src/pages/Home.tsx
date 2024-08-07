@@ -1,15 +1,31 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { Button, Box } from "@mui/material";
 
 const Home = () => {
     const navigate = useNavigate();
 
     return (
-        <div>
-            <button onClick={() => navigate('/login')}>Login</button>
-            <button onClick={() => navigate('/register')}>Register</button>
-        </div>
+        <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            minHeight="100vh"
+        >
+            <Button
+                variant="contained"
+                onClick={() => navigate('/login')}
+                sx={{ mb: 2 }}
+            >
+                Login
+            </Button>
+            <Button
+                variant="contained"
+                onClick={() => navigate('/register')}
+            >
+                Register
+            </Button>
+        </Box>
     );
 };
 
