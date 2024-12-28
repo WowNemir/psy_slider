@@ -15,6 +15,8 @@ class User(db.Model):
     username = db.Column(db.String(255))
     password = db.Column(db.String(255))
     salt = db.Column(db.String(255))
+    telegram_id = db.Column(db.String(255), index=True, unique=True, nullable=True)
+
     clients = db.relationship("Client", backref="user", lazy=True)
     choices = db.relationship("Choice", backref="user", lazy=True)
 

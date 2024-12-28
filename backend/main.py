@@ -8,6 +8,7 @@ from db import db, User, Client, Session, SessionStatus, Choice, Question, clien
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, current_user, jwt_required
 from flask_config import Development, Production
+from auth import safe_parse_webapp_init_data, check_integrity
 
 
 def create_app(config):
@@ -19,9 +20,9 @@ def create_app(config):
     CORS(app)
     jwt = JWTManager(app)
 
-    if config == Development:
-        swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
-        app.register_blueprint(swagger_blu)
+    # if config == Development:
+    #     swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
+    #     app.register_blueprint(swagger_blu)
     
     def calculate_hash(password, salt):
         return bcrypt.hashpw(password.encode("utf-8"), salt.encode("utf-8")).decode("utf-8")
@@ -39,9 +40,9 @@ def create_app(config):
         return User.query.filter_by(id=identity).one_or_none()
 
     @app.route("/api/v1/auth/register", methods=["POST"])
-    def register():
-        username = request.form["new_username"]
-        password = request.form["new_password"]
+    def register(username=None, password=None):
+        username = username or request.form["new_username"]
+        password = password or request.form["new_password"]
 
         def is_password_valid(password):
             return True
@@ -54,17 +55,29 @@ def create_app(config):
         if not is_password_valid(password):
             return jsonify(message="Password is not valid"), 400
 
+
+        _register(username, password)
+        
+        return jsonify(success=True)
+    
+    def _register(username, password=None, telegram_id=None):
+        import random
+        password = password or str(random)
         salt = generate_salt()
         hashed_password = calculate_hash(password, salt)
-
-        new_user = User(
-            id=uuid.uuid1().hex, username=username, password=hashed_password, salt=salt
-        )
+        if telegram_id:
+            new_user = User(
+                id=uuid.uuid1().hex, username=username, password=hashed_password, salt=salt, telegram_id=telegram_id,
+            )
+        else:
+            new_user = User(
+                id=uuid.uuid1().hex, username=username, password=hashed_password, salt=salt
+            )
         db.session.add(new_user)
         db.session.commit()
-
-        return jsonify(success=True)
-
+        return new_user
+    
+    
     @app.route("/api/v1/auth/login", methods=["POST"])
     def login():
         username = request.form["username"]
@@ -234,14 +247,43 @@ def create_app(config):
         questions = [{"id": q.id, "text": q.text} for q in questions]
         return jsonify(questions)
     
+    @app.route("/api/v1/auth/telegram", methods=["POST"])
+    def auth_telegram():
+
+        data = request.json['body']
+        token=os.getenv('BOT_TOKEN')
+        not_widget = False
+        try:
+            check_integrity(token, data)
+            telegram_id = data['id']
+        except Exception:
+            not_widget = True
+        if not_widget:
+            try:
+                data = safe_parse_webapp_init_data(token, init_data=data)
+                telegram_id = data.user.id
+
+            except ValueError:
+                return jsonify({"ok": False, "err": "Unauthorized"}), 401
+            
+        user = User.query.filter(User.telegram_id == telegram_id).one_or_none()
+        if user:
+            access_token = create_access_token(identity=user)
+        else:
+            new_user = _register(username=data.user.username, telegram_id=telegram_id)
+            access_token = create_access_token(identity=new_user)
+        return jsonify(access_token=access_token)
+
     if config == Production:
-        # @app.route('/')
-        # def index():
-        #     return app.send_static_file('index.html')
-        @app.errorhandler(404)   
-        def not_found(e):   
-            return app.send_static_file('index.html')
+        ...
+    @app.route('/')
+    def index(*args, **kwargs):
+        return app.send_static_file('index.html')
+    @app.errorhandler(404)   
+    def not_found(e):   
+        return app.send_static_file('index.html')
     return app
+
 
 if __name__ == "__main__":
     configs = {
@@ -253,4 +295,4 @@ if __name__ == "__main__":
         load_dotenv()
         
     app = create_app(configs.get(os.getenv("Environment"), Development))
-    app.run()
+    app.run(port=8000)

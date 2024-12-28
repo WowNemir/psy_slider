@@ -1,0 +1,8 @@
+[project]
+name = "hello-world"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+dependencies = [
+    "aiogram>=3.16.0",
+]

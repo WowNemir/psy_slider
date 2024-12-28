@@ -1,4 +1,3 @@
-**/site.db
 **/__pycache__/
 .DS_Store
 .env
@@ -26,4 +25,5 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-backend/instance/site.db
+
+**/site.db

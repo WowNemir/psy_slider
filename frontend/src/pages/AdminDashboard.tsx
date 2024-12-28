@@ -7,7 +7,7 @@ import {
 import { LockOutlined } from "@mui/icons-material";
 import { fetchClients, handleSession, deleteClient } from '../api/client';
 import { Client } from '../types/index';
-import LogoutButton from '../components/LogoutButton'; // Import from components
+import LogoutButton from '../components/LogoutButton';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
