@@ -11,19 +11,15 @@ from flask_config import Development, Production
 from auth import safe_parse_webapp_init_data, check_integrity
 
 
-def create_app(config):
+def create_app(*args):
+    config = Development
     app = Flask(__name__, static_folder='../frontend/build', static_url_path='', template_folder='templates')
     app.secret_key = os.getenv("FLASK_SECRET_KEY", default="default_secret_key_here")
     app.url_map.strict_slashes = False
     app.config.from_object(config)
     db.init_app(app)
     CORS(app)
-    jwt = JWTManager(app)
-
-    # if config == Development:
-    #     swagger_blu = Blueprint('site', __name__, static_url_path='/static/', static_folder='static')
-    #     app.register_blueprint(swagger_blu)
-    
+    jwt = JWTManager(app)    
     def calculate_hash(password, salt):
         return bcrypt.hashpw(password.encode("utf-8"), salt.encode("utf-8")).decode("utf-8")
 
@@ -283,16 +279,5 @@ def create_app(config):
     def not_found(e):   
         return app.send_static_file('index.html')
     return app
-
-
-if __name__ == "__main__":
-    configs = {
-        'development': Development,
-        'production': Production,
-    }
-    if not os.getenv("Environment"):
-        from dotenv import load_dotenv
-        load_dotenv()
-        
-    app = create_app(configs.get(os.getenv("Environment"), Development))
-    app.run(port=8000)
+app = create_app()
+# app.run(port=8000)
