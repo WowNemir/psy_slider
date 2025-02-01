@@ -7,16 +7,17 @@ from sqlalchemy.orm import joinedload
 from db import db, User, Client, Session, SessionStatus, Choice, Question, client_schema, choice_schema
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, current_user, jwt_required
-from flask_config import Development, Production
 from auth import safe_parse_webapp_init_data, check_integrity
-
+import pathlib
 
 def create_app(*args):
-    config = Development
+    cwd = pathlib.Path.cwd()
+
     app = Flask(__name__, static_folder='../frontend/build', static_url_path='', template_folder='templates')
     app.secret_key = os.getenv("FLASK_SECRET_KEY", default="default_secret_key_here")
     app.url_map.strict_slashes = False
-    app.config.from_object(config)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + str(cwd / "instance" / "site.db")
+
     db.init_app(app)
     CORS(app)
     jwt = JWTManager(app)    
@@ -270,8 +271,6 @@ def create_app(*args):
             access_token = create_access_token(identity=new_user)
         return jsonify(access_token=access_token)
 
-    if config == Production:
-        ...
     @app.route('/')
     def index(*args, **kwargs):
         return app.send_static_file('index.html')
@@ -280,4 +279,3 @@ def create_app(*args):
         return app.send_static_file('index.html')
     return app
 app = create_app()
-# app.run(port=8000)
