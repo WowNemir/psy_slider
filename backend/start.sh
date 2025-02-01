@@ -1,0 +1,1 @@
+mkdir -p instance && alembic upgrade head && gunicorn "main:app"
